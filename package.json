@@ -15,7 +15,8 @@
     "manifest": "node scripts/validate-manifest.mjs",
     "smoke": "node scripts/smoke.mjs",
     "rename": "node scripts/rename.mjs",
-    "release": "node scripts/release.mjs"
+    "release": "node scripts/release.mjs",
+    "pack:release": "node scripts/pack-release.mjs"
   },
   "dependencies": {
     "@soundbase/plugin-contract": "^0.2.0",
@@ -26,6 +27,6 @@
       "name": "soundbase-plugin-template",
       "version": "1.0.0"
     },
-    "generatedFrom": "04bac278e63fd306cb0e910ff18f40322f13b43e"
+    "generatedFrom": "f40bef0998318c855880fb239400687644be6fc5"
   }
 }

@@ -1,3 +1,5 @@
+![SoundBase Plugin Template — the Lab's signal-flask mark, the SoundBase wordmark, and one real sweep from this plugin's synthetic spectrum](.github/banner.svg)
+
 # SoundBase Plugin Template
 
 A complete, working SoundBase plugin. Press **Use this template**, run it, and
@@ -191,6 +193,7 @@ protects *SoundBase*; you need your own boundary to protect *yourself*.
 | `npm run smoke` | boot as a child process, handshake, sweep — what the host does |
 | `npm run manifest` | validate `soundbase-plugin.json` against the contract schema |
 | `npm run rename <id>` | take an id, in all four places it appears |
+| `npm run pack:release` | build the zip users install, and boot-check it |
 | `npm run release <x.y.z>` | tag, pack, and publish a GitHub Release |
 
 ## The specification

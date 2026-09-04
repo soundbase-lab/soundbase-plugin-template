@@ -29,17 +29,25 @@ jobs:
         # path handling, process termination and line endings differ, and those
         # are exactly the bugs that reach users first.
         os: [ubuntu-latest, macos-latest, windows-latest]
-        node: [20, 22]
+        node: [22, 24]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
-          cache: npm
+          # `cache: npm` is a hard error when there is no lockfile to key on,
+          # and a repository made from this template has none until someone
+          # commits their first install. Cache from then on, not before.
+          cache: ${{ hashFiles('package-lock.json') != '' && 'npm' || '' }}
 
-      - run: npm ci
+      - name: Install
+        shell: bash
+        # `npm ci` needs a lockfile; `npm install` writes one. Commit the
+        # lockfile it produces and every later run takes the reproducible path.
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
       - name: Check the plugin is well-formed
         run: npm run doctor
@@ -54,11 +62,14 @@ jobs:
     # Proving the plugin starts is cheap and independent of the test matrix.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
+          node-version: 24
+          cache: ${{ hashFiles('package-lock.json') != '' && 'npm' || '' }}
+      - name: Install
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
       - name: Boot, handshake, and serve a trace
         run: npm run smoke

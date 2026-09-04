@@ -14,9 +14,11 @@
 //
 // that dependency is now historical rather than necessary: it dates from when
 // @soundbase/plugin-shell and @soundbase/plugin-contract were not on npm and
-// had to be vendored in from the monorepo. They are published now, so the
-// runnable folder this ships could be produced by `npm ci --omit=dev` here and
-// the checkout dropped entirely. Nobody has done that work yet.
+// had to be vendored in from the monorepo. They are published now, and
+// pack-release.mjs beside this file already builds the same zip from an
+// ordinary `npm ci --omit=dev` with no checkout at all — it is what
+// .github/workflows/release.yml runs. This script has simply not been moved
+// over to it yet. If you have no SoundBase checkout, push a tag instead.
 //
 // what the Lab checks when the tag is submitted (labApi releaseResolver):
 //   - a published (non-draft) GitHub Release on the tag
@@ -48,13 +50,18 @@ const MANIFEST = join(ROOT, 'soundbase-plugin.json');
 const PACKAGE = join(ROOT, 'package.json');
 const ASSET_MAX_BYTES = 250 * 1024 * 1024;
 
-// repo files that are not part of the running plugin
+// repo files that are not part of the running plugin. Kept identical to the
+// list in pack-release.mjs — the two scripts build the same zip by different
+// routes, and a zip whose contents depend on which one you ran is worse than
+// either. A test in the SoundBase monorepo holds them together.
 const NOT_SHIPPED = [
   '.github',
   '.gitignore',
   '__tests__',
   'CLAUDE.md',
   'docs',
+  'examples',
+  'package-lock.json',
   'package.json',
   'scripts',
 ];

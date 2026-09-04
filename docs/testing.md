@@ -118,17 +118,28 @@ and one warning line in the log is the only evidence.
 
 ## CI
 
-`.github/workflows/ci.yml` runs the three checks on a matrix of operating
-systems and Node versions.
+Two workflows ship with this template. `.github/workflows/ci.yml` runs the
+three checks on a matrix of operating systems and Node versions, on every push
+and pull request. `.github/workflows/release.yml` runs them again on a `v*`
+tag and turns that commit into a GitHub Release —
+[publishing.md](publishing.md#cutting-a-release) covers it.
+
+The rest of this section is about `ci.yml`.
 
 The OS matrix is worth keeping even for a plugin that talks to hardware nobody
 has in CI: path handling, process termination and line endings differ between
 platforms, and those are exactly the bugs that reach users before you notice
 them.
 
-Nothing in it needs adapting: both SDK packages are on public npm, so `npm ci`
-resolves them on a stock runner with no registry configuration and no secrets.
+Nothing in it needs adapting: both SDK packages are on public npm, so the
+install resolves on a stock runner with no registry configuration and no
+secrets.
 
-The one thing to keep an eye on is your lockfile — `npm ci` installs exactly
-what `package-lock.json` pins, so commit it, and let your usual update process
-move the SDK rather than editing the lockfile by hand.
+The one thing to keep an eye on is your lockfile. A repository made from this
+template does not have one yet, so the install step falls back to `npm install`
+and the dependency cache stays off — CI is green from the first push, but two
+runs a month apart can install different versions of the SDK. Run `npm install`
+once locally and commit the `package-lock.json` it writes: from then on CI
+takes the `npm ci` path, installs exactly what the lockfile pins, and caches
+between runs. Let your usual update process move the SDK rather than editing
+the lockfile by hand.
