@@ -18,9 +18,20 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const ROOT_URL = new URL('..', import.meta.url);
+const ROOT = fileURLToPath(ROOT_URL);
 const read = (rel) => readFileSync(join(ROOT, rel), 'utf8');
 const has = (rel) => existsSync(join(ROOT, rel));
+
+// Line endings are not an edit. Git on Windows checks text files out as CRLF
+// unless a .gitattributes says otherwise, so hashing raw bytes reports the
+// runner's git config as "someone changed main.js". Normalise first, and the
+// warning means what it says. scripts/build-template-repo.mjs stamps the hash
+// below through the same normalisation.
+const contentHash = (buf) =>
+  createHash('sha256')
+    .update(buf.toString('utf8').replace(/\r\n/g, '\n'))
+    .digest('hex');
 
 // main.js is the shell bootstrap and is meant to be byte-identical across every
 // plugin. Editing it is almost always a mistake — whatever you wanted belongs
@@ -186,9 +197,7 @@ const entrypoint = manifest?.runtime?.entrypoint ?? 'main.js';
 if (!has(entrypoint)) {
   bad(`runtime.entrypoint is ${entrypoint}, which does not exist`);
 } else {
-  const digest = createHash('sha256')
-    .update(readFileSync(join(ROOT, entrypoint)))
-    .digest('hex');
+  const digest = contentHash(readFileSync(join(ROOT, entrypoint)));
   if (entrypoint === 'main.js' && digest !== MAIN_JS_SHA256) {
     warn(
       'main.js has been edited',
@@ -207,10 +216,16 @@ section('adapter');
 if (!has('adapter.js')) {
   bad('adapter.js does not exist', 'main.js imports it by name');
 } else {
-  const adapter = await import(join(ROOT, 'adapter.js')).catch((err) => {
-    bad(`adapter.js does not load: ${err.message}`);
-    return null;
-  });
+  // By URL, not by path. `import('D:\plugin\adapter.js')` is read as a
+  // specifier whose scheme is `d:`, which the ESM loader refuses — so an
+  // absolute path works everywhere except Windows, where it fails on every
+  // run.
+  const adapter = await import(new URL('adapter.js', ROOT_URL).href).catch(
+    (err) => {
+      bad(`adapter.js does not load: ${err.message}`);
+      return null;
+    }
+  );
   if (adapter) {
     for (const fn of ['discoverDevices', 'createSpectrumAnalyzerAdapter']) {
       if (typeof adapter[fn] === 'function') ok(`exports ${fn}()`);

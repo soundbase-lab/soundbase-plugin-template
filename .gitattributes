@@ -1,0 +1,7 @@
+# Check every text file out with LF, on every platform.
+#
+# Without this, git on Windows rewrites text files to CRLF at checkout, and
+# `npm run doctor` reports "main.js has been edited" on a clone nobody has
+# touched — the exact false alarm that trains an author to ignore the check
+# that catches a real edit.
+* text=auto eol=lf
