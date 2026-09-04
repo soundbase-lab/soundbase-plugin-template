@@ -1,0 +1,7 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Plugin contract or device behaviour
+    url: https://lab.soundbase.app
+    about: >-
+      This repository is the template itself. Questions about the plugin
+      contract, getting a plugin listed, or device behaviour belong in the Lab.

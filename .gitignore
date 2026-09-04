@@ -1,0 +1,9 @@
+node_modules/
+dist/
+
+# frozen language runtimes assembled per target — large, binary, never committed
+runtime/
+
+# CPython bytecode, regenerated per interpreter version
+__pycache__/
+*.pyc

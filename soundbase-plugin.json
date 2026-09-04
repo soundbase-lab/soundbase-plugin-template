@@ -1,0 +1,36 @@
+{
+  "manifestVersion": 1,
+  "id": "template",
+  "name": "SoundBase Plugin Template",
+  "version": "0.1.0",
+  "license": "BUSL-1.1",
+  "repository": "https://github.com/your-org/soundbase-plugin-template",
+  "maintainers": [{ "name": "Your Name", "email": "you@example.com" }],
+  "contract": { "core": "1.0", "modules": { "SpectrumAnalyzer": "1.0" } },
+  "runtime": { "type": "node", "entrypoint": "main.js" },
+  "deployment": ["managed"],
+  "template": { "name": "soundbase-plugin-template", "version": "1.0.0" },
+  "products": [
+    {
+      "deviceTypeId": "plugin:template/synthetic",
+      "manufacturer": { "id": "soundbase", "name": "SoundBase" },
+      "model": {
+        "id": "synthetic",
+        "name": "Synthetic",
+        "displayName": "Synthetic Analyzer"
+      },
+      "family": { "id": "template", "name": "Template" },
+      "capabilities": { "spectrumAnalyzer": true },
+      "traits": { "isSpectrumAnalyzer": true }
+    }
+  ],
+  "pluginConfigFields": [
+    {
+      "id": "sweepIntervalMs",
+      "type": "number",
+      "label": "Simulated sweep interval (ms)",
+      "default": 50
+    }
+  ],
+  "stateKeys": []
+}

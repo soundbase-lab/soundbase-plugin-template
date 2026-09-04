@@ -1,0 +1,44 @@
+{
+  "manifestVersion": 1,
+  "id": "acme-network",
+  "name": "Acme Networked Analyzer",
+  "version": "0.1.0",
+  "license": "BUSL-1.1",
+  "contract": { "core": "1.0", "modules": { "SpectrumAnalyzer": "1.0" } },
+  "runtime": { "type": "node", "entrypoint": "main.js" },
+  "deployment": ["managed"],
+  "template": { "name": "soundbase-plugin-template", "version": "1.0.0" },
+  "products": [
+    {
+      "deviceTypeId": "plugin:acme-network/sa-3000",
+      "manufacturer": { "id": "acme", "name": "Acme Instruments" },
+      "model": {
+        "id": "sa-3000",
+        "name": "SA-3000",
+        "displayName": "Acme SA-3000"
+      },
+      "family": { "id": "acme-sa", "name": "Acme SA" },
+      "capabilities": { "spectrumAnalyzer": true },
+      "traits": { "isSpectrumAnalyzer": true }
+    }
+  ],
+  "pluginConfigFields": [
+    {
+      "id": "addresses",
+      "type": "textinput",
+      "label": "Analyzer addresses",
+      "help": "Comma-separated host or host:port, e.g. 192.168.1.50, 192.168.1.51:5026",
+      "default": ""
+    }
+  ],
+  "deviceConfigFields": [
+    {
+      "id": "host",
+      "type": "textinput",
+      "label": "IP address",
+      "required": true
+    },
+    { "id": "port", "type": "number", "label": "Port", "default": 5025 }
+  ],
+  "stateKeys": []
+}
