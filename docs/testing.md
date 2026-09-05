@@ -48,7 +48,7 @@ booting the plugin
 SB_PLUGIN_READY {"port":54494}
   ok    handshake reported port 54494
   ok    /health
-  ok    /info — My Analyzer 0.3.0, core 1.0
+  ok    /info — My Analyzer 0.3.0, core 1.1
   ok    /devices — 1 discovered
   ok    configuration applied — 470000000–616000000 Hz, 401 points
   ok    sweep started

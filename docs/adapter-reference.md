@@ -251,6 +251,45 @@ Use it for the transport dying **unprompted**: unplugged, powered off,
 connection reset. Not for a bad parameter, and not for a `close()` you asked
 for yourself.
 
+### `onWarnings` (assigned to you) — core 1.1
+
+Conditions worth a person's attention that are not failures. The shell
+assigns this property; you call it with the **complete current set** whenever
+it changes:
+
+```js
+this.onWarnings?.([
+  { id: 'overload', severity: 'warning',
+    message: 'Input overload: the front end is clipping. Reduce gain or add attenuation.' },
+  { id: 'uncalibrated', severity: 'info',
+    message: 'Levels are estimated, not calibrated; relative readings are fine.' },
+]);
+```
+
+| | |
+|---|---|
+| `id` | stable per condition (`overload`, `usb-overflow`), lowercase, so the host can tell a condition that persists from one that recurs |
+| `severity` | `info` — worth knowing, the trace is fine · `warning` — the trace is degraded, act if it persists · `critical` — do not trust the trace right now, or the hardware is at risk |
+| `message` | one or two sentences the *user* can act on: what is wrong and what to do. The reader is an RF coordinator an hour before doors, not you |
+
+Three rules:
+
+- **Replace, don't append.** Each call is the whole set; a condition that has
+  cleared simply stops being listed. There is nothing to reset, which is what
+  makes reporting from a timer safe.
+- **Pick the severity from the reader's seat.** The question is "can I trust
+  what the plot shows?", not how alarming the cause sounds. Sample overflows
+  are a `warning`; a stalled radio whose trace has silently frozen is
+  `critical`; a USB 2 link is `info`.
+- **Warnings are not status.** A device stays `ok` while overloaded. Something
+  the device cannot recover from is `onFatal`, not a critical warning.
+
+Call it as often as you like — the shell drops identical reports before they
+reach the host. The `?.` matters: a shell built for core 1.0 never assigns it,
+and your plugin should still run there. For conditions about the plugin as a
+whole rather than one device, `this.updateWarnings(list)` on the plugin class
+does the same thing at plugin level.
+
 ---
 
 ## Device controls

@@ -45,7 +45,7 @@ host still loads on an older one; that is deliberate and load-bearing.
 ## `contract`
 
 ```json
-"contract": { "core": "1.0", "modules": { "SpectrumAnalyzer": "1.0" } }
+"contract": { "core": "1.1", "modules": { "SpectrumAnalyzer": "1.0" } }
 ```
 
 `core` is mandatory; `modules` names the capability modules you implement.
@@ -156,7 +156,7 @@ contract, and an old lineage does not make an incompatible plugin compatible.
   "license": "MIT",
   "repository": "https://github.com/acme/soundbase-plugin-acme",
   "maintainers": [{ "name": "Acme Instruments", "email": "support@acme.example" }],
-  "contract": { "core": "1.0", "modules": { "SpectrumAnalyzer": "1.0" } },
+  "contract": { "core": "1.1", "modules": { "SpectrumAnalyzer": "1.0" } },
   "runtime": { "type": "node", "entrypoint": "main.js" },
   "deployment": ["managed"],
   "template": { "name": "soundbase-plugin-template", "version": "1.0.0" },

@@ -108,7 +108,7 @@ The first two lines after a successful start tell you which build is running:
 ```
 
 For a packed release that second line reads `packed sha256:… at <date>
-(contract core 1.0, SpectrumAnalyzer 1.0)` instead — which is how support
+(contract core 1.1, SpectrumAnalyzer 1.0)` instead — which is how support
 works out *which copy* of your plugin a user is running.
 
 ## What the host does to your process

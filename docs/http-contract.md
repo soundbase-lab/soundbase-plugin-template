@@ -46,10 +46,15 @@ three consecutive failures as a crash.
   "id": "acme-network",
   "name": "Acme Networked Analyzer",
   "version": "0.1.0",
-  "contract": { "core": "1.0", "modules": { "SpectrumAnalyzer": "1.0" } },
+  "contract": { "core": "1.1", "modules": { "SpectrumAnalyzer": "1.0" } },
   "status": { "status": "ok" }
 }
 ```
+
+A status may also carry `warnings` (core 1.1): conditions worth attention that
+do not change the status itself — `[{ id, severity, message, since? }]`, with
+`severity` one of `info`, `warning`, `critical`, rendered by SoundBase as three
+colours. The array is the complete current set; absent means none.
 
 Statuses are `connecting`, `ok`, `failed`, `bad-config` — and, for devices
 only, `disconnected`. `bad-config` means the supplied configuration cannot
