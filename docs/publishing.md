@@ -56,6 +56,26 @@ passes, so a bad release cannot damage a working install.
 
 Two routes, and they produce the same zip. Pick one.
 
+### From the Actions tab, on CI
+
+The shortest path, with nothing to run locally: **Actions → Release → Run
+workflow**, set `bump` to `patch`, `minor` or `major` (or type an exact
+`version`). The run moves the version in all three files that carry it —
+`soundbase-plugin.json`, `package.json`, `package-lock.json` — makes the
+release commit and the `v<version>` tag, then runs `doctor`, `manifest`, the
+tests and the pack against that commit. Only if all of that passes does it
+push the commit and the tag to `main` and publish the Release; a red run
+leaves `main` exactly as it was.
+
+`bump: none` (the default) is the rehearsal: the same build, the zip attached
+to the run as the `plugin-zip` artifact, no Release — and the run's summary
+says so, with the command that would publish.
+
+Two things worth knowing: the run pushes to `main`, so if `main` is protected
+the Actions identity needs to be on the ruleset's bypass list (or the push
+fails, before anything is published); and if `main` moved while the run was
+going, the push is refused and nothing is published — run it again.
+
 ### From a tag, on CI
 
 Bump `version` in `soundbase-plugin.json` and `package.json`, commit, then:

@@ -6,6 +6,13 @@
 #
 #   git tag v0.5.0 && git push origin v0.5.0
 #
+# Or, from the Actions tab: run this workflow with `bump` set to patch, minor
+# or major (or an explicit `version`). That bumps the three version fields,
+# commits, tags and publishes — in that order but pushing last, so a failed
+# check leaves main untouched. A tag pushed by a workflow does not trigger
+# workflows (GitHub's guard against loops), which is why this run publishes
+# itself rather than handing off to the tag path.
+#
 # The version in the tag must match `version` in soundbase-plugin.json and
 # package.json — bump and commit those first. `npm run release 0.5.0` does the
 # bump, the tag and the release from your own machine instead, and needs a
@@ -21,8 +28,20 @@ name: Release
 on:
   push:
     tags: ['v*']
-  # Same build, no Release — for trying the workflow out without cutting one.
+  # From the Actions tab. `bump: none` is a rehearsal: the same build, the zip
+  # as an artifact, no Release. Anything else cuts a release from here — bump
+  # the version, commit, tag, and publish — with nothing to run locally.
   workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Cut a release: how far to move the version. none = only build the zip.'
+        type: choice
+        options: [none, patch, minor, major]
+        default: none
+      version:
+        description: 'Release exactly this version (x.y.z) instead of bumping — the current version tags main as it is. Leave blank to use the choice above.'
+        type: string
+        default: ''
 
 permissions:
   contents: write # to create the Release
@@ -43,6 +62,40 @@ jobs:
         run: |
           if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
+      # A manual run that asked for a release: move the version and make the
+      # release commit and tag here, locally. They are pushed only after every
+      # check and the pack have passed, further down.
+      - name: Bump the version
+        id: bump
+        if: github.event_name == 'workflow_dispatch' && (inputs.bump != 'none' || inputs.version != '')
+        shell: bash
+        run: |
+          set -euo pipefail
+          WANT="${{ inputs.version }}"
+          [ -n "$WANT" ] || WANT="${{ inputs.bump }}"
+          CURRENT=$(node -e "process.stdout.write(require('./soundbase-plugin.json').version)")
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if [ "$WANT" = "$CURRENT" ]; then
+            # the version on main is the one to release: no bump, no commit —
+            # just the tag on the commit that already carries it
+            VERSION="$CURRENT"
+          else
+            VERSION=$(node scripts/bump-version.mjs "$WANT")
+          fi
+          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null || git ls-remote --exit-code --tags origin "v$VERSION" >/dev/null 2>&1; then
+            echo "::error::v$VERSION already exists; choose a different bump or version"
+            exit 1
+          fi
+          if [ "$VERSION" != "$CURRENT" ]; then
+            git add package.json package-lock.json soundbase-plugin.json
+            git commit -q -m "release: v$VERSION"
+          fi
+          git tag -a "v$VERSION" -m "v$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Release v$VERSION::bumped, committed and tagged locally; pushed only if every check passes"
+
       # A tag can point at any commit, including one that never went through
       # CI. Re-run the checks rather than trust that it did.
       - name: Check the plugin is well-formed
@@ -56,17 +109,24 @@ jobs:
 
       # Nothing installs dependencies on the user's machine, so they travel in
       # the zip — and dev dependencies have no business being in there.
+      # `--no-save`, because prune otherwise rewrites package-lock.json, and the
+      # pack step refuses to pack a tree with uncommitted changes — correctly:
+      # it must never be possible to release something that is not in git.
       - name: Drop dev dependencies
-        run: npm prune --omit=dev
+        run: npm prune --omit=dev --no-save
 
       # Packs, boots the packed folder the way the installer's probe does, and
       # refuses anything the Lab would reject. On a tag it also insists the
       # manifest version matches the tag.
       - name: Pack the release zip
         shell: bash
+        env:
+          BUMPED: ${{ steps.bump.outputs.version }}
         run: |
           if [ "$GITHUB_REF_TYPE" = tag ]; then
             npm run pack:release -- --expect "${GITHUB_REF_NAME#v}"
+          elif [ -n "$BUMPED" ]; then
+            npm run pack:release -- --expect "$BUMPED"
           else
             npm run pack:release
           fi
@@ -76,12 +136,49 @@ jobs:
           name: plugin-zip
           path: dist/*.zip
 
+      # A dispatch run with bump=none stops here on purpose, and that is easy to
+      # mistake for a failure when the Release list stays empty. Say so where
+      # the run summary is read, with what does publish.
+      - name: Explain why there is no Release
+        if: github.ref_type != 'tag' && steps.bump.outputs.tag == ''
+        shell: bash
+        run: |
+          VERSION=$(node -e "process.stdout.write(require('./soundbase-plugin.json').version)")
+          echo "::notice title=No Release created::Started by hand with bump=none, so this run only packed the zip (see the plugin-zip artifact). To publish v$VERSION, run this workflow again with a bump, or push the tag:  git tag v$VERSION && git push origin v$VERSION"
+          {
+            echo "## No Release created"
+            echo
+            echo "This run was started by hand with \`bump: none\`, so it packed the zip and attached it as the **plugin-zip** artifact — nothing more. That is the rehearsal path."
+            echo
+            echo "To publish **v$VERSION** as a GitHub Release the Lab can install, either run this workflow again with \`bump\` set (patch / minor / major, or an explicit \`version\`), or push the tag yourself:"
+            echo
+            echo '```sh'
+            echo "git tag v$VERSION && git push origin v$VERSION"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Everything passed: now the release commit and its tag go to main. If
+      # main moved underneath this run, the push is refused and nothing is
+      # published — re-run the workflow rather than force anything.
+      - name: Push the release commit and tag
+        if: steps.bump.outputs.tag != ''
+        shell: bash
+        env:
+          TAG: ${{ steps.bump.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if ! git push origin "HEAD:${GITHUB_REF_NAME}"; then
+            echo "::error::could not push the release commit to ${GITHUB_REF_NAME} — the branch moved during this run. Re-run the workflow; nothing was published and the tag was not pushed."
+            exit 1
+          fi
+          git push origin "$TAG"
+
       - name: Publish the GitHub Release
-        if: github.ref_type == 'tag'
+        if: github.ref_type == 'tag' || steps.bump.outputs.tag != ''
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || steps.bump.outputs.tag }}
         run: |
           # `npm run release` cuts the tag and the Release together, so on that
           # path the Release is already here and correct. Do not fight it.

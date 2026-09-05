@@ -27,7 +27,7 @@ driver/                 optional: protocol-specific code adapter.js uses
 __tests__/              contract tests, driven through the real shell
 examples/network-analyzer/   a second complete plugin, over TCP, with a fake device
 docs/                   the guide set; docs/README.md indexes it
-scripts/                doctor, smoke, manifest, rename, release, pack-release
+scripts/                doctor, smoke, manifest, rename, bump-version, release, pack-release
 ```
 
 ## Invariants — do not violate these without being asked
