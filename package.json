@@ -1,6 +1,6 @@
 {
   "name": "soundbase-plugin-template",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Starting point for a SoundBase plugin: a synthetic spectrum analyzer served by the plugin shell.",
   "license": "BUSL-1.1",
   "type": "module",
@@ -20,14 +20,14 @@
     "pack:release": "node scripts/pack-release.mjs"
   },
   "dependencies": {
-    "@soundbase/plugin-contract": "^0.6.0",
-    "@soundbase/plugin-shell": "^0.6.0"
+    "@soundbase/plugin-contract": "^0.7.0",
+    "@soundbase/plugin-shell": "^0.7.0"
   },
   "soundbase": {
     "template": {
       "name": "soundbase-plugin-template",
-      "version": "1.0.5"
+      "version": "1.0.6"
     },
-    "generatedFrom": "19e74efcfecc0b0fd0856e4459fa5bb0f20c1eec"
+    "generatedFrom": "29747c45f42b79b5fc7f7be769cfc5ede64639ca"
   }
 }
