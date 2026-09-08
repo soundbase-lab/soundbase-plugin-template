@@ -81,7 +81,7 @@ sequenceDiagram
     H->>P: PUT /config {values}
     P->>A: init(values)
     H->>P: GET /health  (every 5s, forever)
-    H->>P: GET /events  (SSE, lifecycle only)
+    H->>P: GET /events  (SSE: lifecycle, and device-state for monitored devices)
 ```
 
 The handshake line is the whole of the startup contract, and it is where
@@ -152,6 +152,34 @@ sequenceDiagram
     S->>A: close()
 ```
 
+A monitored device — an IEM transmitter, a receiver — takes a shorter path,
+because its state is pushed rather than pulled:
+
+```mermaid
+sequenceDiagram
+    participant H as SoundBase
+    participant S as shell
+    participant A as your monitoring adapter
+
+    H->>S: POST /devices  { id, product, config }
+    S->>A: createMonitoringAdapter(device)
+    Note over S,A: onState / onWarnings / onFatal assigned
+    S->>A: open()
+    A-->>S: onState('channelName', …), onState('frequency', …), onState('receivers', …)
+    A-->>S: { channelCount, properties, identity }
+    Note over S: device status → ok; channelCount, layout, properties published
+    loop as the hardware reports
+        A-->>S: onState('meters', …)
+        Note over S: coalesced to one patch per 50 ms
+        S-->>H: event: device-state
+    end
+    H->>S: POST /devices/{id}/commands  { propertyId, channelIndex, value }
+    S->>A: setProperty(command)
+    S-->>H: 202
+    A-->>S: onState('txPower', …)
+    S-->>H: event: device-state
+```
+
 Two details that surprise people:
 
 **A discovered device is not opened until something asks it to do work.** It
@@ -163,8 +191,9 @@ machine.
 **Traces are pulled, not pushed.** SoundBase long-polls `GET /trace`: the shell
 holds the response open until a sweep newer than the last one served completes,
 capping the hold at 5 seconds. The poll rate therefore matches your hardware
-with no interval to tune anywhere. Measurement data never travels on the SSE
-stream — that carries lifecycle only.
+with no interval to tune anywhere. Spectrum traces never travel on the SSE
+stream. Monitored-device state does — it is small, frequent and many-keyed,
+the opposite of a trace — which is why the two modules differ here.
 
 ## Supervision, and what happens when things break
 
@@ -224,6 +253,9 @@ node_modules/@soundbase/plugin-contract/spec/
   soundbase-plugin.schema.json     validate your manifest against this
   core.openapi.yaml                identity, devices, config, events, health
   spectrum-analyzer.openapi.yaml   configuration, sweep control, traces
+  channel-monitoring.openapi.yaml  the device-state event, state key value shapes, layouts
+  property-control.openapi.yaml    property descriptors and the commands endpoint
+  state-keys.json                  every core state key with its scope and operation
 ```
 
 They ship inside the contract package rather than as a copy that might have

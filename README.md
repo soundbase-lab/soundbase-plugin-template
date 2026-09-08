@@ -71,7 +71,11 @@ Do it before you publish anything: the id is stored in users' saved projects.
 per model, plus the config fields SoundBase should render.
 ([reference](docs/manifest-reference.md))
 
-**3. Replace `adapter.js`.** It exports two things:
+**3. Replace `adapter.js`.** It exports `discoverDevices` and one adapter
+factory per module — `createSpectrumAnalyzerAdapter` for a spectrum source,
+`createMonitoringAdapter` for a receiver or IEM transmitter that lands in
+device monitoring. The template ships one synthetic device of each; keep the
+factory your hardware needs:
 
 ```js
 // called while SoundBase is enumerating; return currently reachable devices
@@ -95,6 +99,20 @@ export function createSpectrumAnalyzerAdapter(device, pluginConfig) {
     },
     async startSweep(onTrace) { /* call onTrace(ampsDbm: number[]) per sweep */ },
     async stopSweep() {},
+    async close() {},
+  };
+}
+```
+
+```js
+// a monitored device: push state, apply commands, let the state answer
+export function createMonitoringAdapter(device, pluginConfig) {
+  return {
+    async open() {              // connect, then report everything through this.onState
+      this.onState('frequency', { channels: { 1: 518.1 } });
+      return { channelCount: 1, properties: [ /* PropertyControl descriptors */ ] };
+    },
+    async setProperty({ propertyId, channelIndex, value }) { /* apply, then onState */ },
     async close() {},
   };
 }
@@ -205,6 +223,8 @@ node_modules/@soundbase/plugin-contract/spec/
   soundbase-plugin.schema.json     validate your manifest against this
   core.openapi.yaml                the core plugin API
   spectrum-analyzer.openapi.yaml   the SpectrumAnalyzer module
+  channel-monitoring.openapi.yaml  the ChannelMonitoring module
+  property-control.openapi.yaml    the PropertyControl module
 ```
 
 They are not a copy that might have gone stale — they ship inside the contract

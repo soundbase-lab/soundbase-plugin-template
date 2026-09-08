@@ -3,20 +3,29 @@
 `adapter.js` is the file you write. Everything on this page is what the shell
 calls, what it passes, and what it does with what you return.
 
-The normative source is
-`node_modules/@soundbase/plugin-contract/spec/spectrum-analyzer.openapi.yaml`.
-Where this page and that document disagree, the document is right.
+The normative sources are
+`node_modules/@soundbase/plugin-contract/spec/spectrum-analyzer.openapi.yaml`
+and, for monitored devices, `channel-monitoring.openapi.yaml` and
+`property-control.openapi.yaml` beside it. Where this page and those
+documents disagree, the documents are right.
 
-## The two exports
+## The exports
 
 ```js
 export async function discoverDevices(pluginConfig) → Device[]
 
+// one factory per module; export the ones your products need
 export function createSpectrumAnalyzerAdapter(device, pluginConfig) → Adapter
+export function createMonitoringAdapter(device, pluginConfig) → MonitoringAdapter
 ```
 
-`main.js` imports both by name and does nothing else. Do not add a third
-export expecting the shell to call it.
+`main.js` wires whichever factories exist and does nothing else. Which one a
+device gets is decided by its product's manifest `capabilities`:
+`spectrumAnalyzer` opens the spectrum-analyzer adapter, anything else
+(`meters`, `frequency`, `receivers`, …) opens the monitoring adapter, and a
+product with both gets both. A plugin that serves only one kind of device
+exports only that factory. Do not add other exports expecting the shell to
+call them.
 
 ---
 
@@ -324,11 +333,151 @@ for every property and type.
 
 ---
 
+## `createMonitoringAdapter(device, pluginConfig)`
+
+For RF receivers, IEM transmitters and anything else that lands in
+SoundBase's **device monitoring** views rather than the spectrum plot. Called
+once per device, when SoundBase adds it. Returns an object with two required
+methods and one optional one; the shell assigns three callbacks. Not async,
+no I/O — just construct.
+
+```js
+export function createMonitoringAdapter(device, pluginConfig) {
+  return {
+    async open() {                      // connect, report the full state, start reporting
+      return { channelCount: 2, properties: [...], identity: { model, firmware } };
+    },
+    async close() {},
+    async setProperty(command) {},      // PropertyControl; optional
+    // assigned by the shell before open(): onState, onWarnings, onFatal
+  };
+}
+```
+
+The module is **push, not pull**. Nothing polls you: every fact SoundBase
+shows comes from you calling `this.onState(key, value)` — on connect, on every
+change, and for meters on a timer. The shell turns each call into a state
+patch on the `device-state` event and SoundBase's monitoring cards render
+from those patches, the same way they render its built-in devices.
+
+### `open()` → `{ channelCount?, layout?, properties?, identity? }`
+
+Connect, then report. `onState` is already assigned when `open()` runs, so
+report the complete state *before* returning — channel names, frequencies,
+power, mute, the paired receivers — and SoundBase draws a full card the
+moment the device appears rather than filling it in field by field.
+
+| | |
+|---|---|
+| `channelCount` | how many channels *this unit* has, when it differs from the product's `traits.channelCount`. |
+| `layout` | a replacement for the product's manifest layout, for a unit whose front panel differs from the product's. Rare. |
+| `properties` | `PropertyControl` descriptors — see [`setProperty`](#setpropertycommand). |
+| `identity` | `{ model, firmware }`, for the plugin manager. |
+
+Throwing marks the device `failed` with your message, exactly as for the
+spectrum-analyzer adapter.
+
+### `onState(key, value, operation?)` (assigned to you)
+
+The one call that matters. `key` is either a **core state key** —
+`frequency`, `channelName`, `mute`, `txPower`, `meters`, `battery`,
+`receivers` and the rest of `spec/state-keys.json` — or an **extension key**
+you declared in the manifest's `stateKeys`, named `x.<your-id>.<key>`. The
+shell derives the patch's scope and operation from that table and from your
+declaration; you never write them.
+
+Value shapes, from `channel-monitoring.openapi.yaml`:
+
+```js
+// channel-scoped keys: a map of channel number → value, wrapped in `channels`
+this.onState('frequency',   { channels: { 1: 518.100, 2: 542.350 } });   // MHz
+this.onState('channelName', { channels: { 1: 'VOX L' } });
+this.onState('mute',        { channels: { 1: false } });
+this.onState('txPower',     { channels: { 1: 50 } });                    // mW
+
+// meters: device-scoped, one reading per channel
+this.onState('meters', { timestamp: Date.now(), channels: {
+  1: { af: -18.5, afR: -20.1, txOn: true },     // dBFS; rf1..rf6 in dBm; lqi 0–100
+} });
+
+// receivers: the bodypacks paired to an IEM transmitter, as a delta
+this.onState('receivers', {
+  added:   [{ id: 'pack:1', name: 'Pack 1', channel: 1, battery: { percent: 92 } }],
+  updated: [{ id: 'pack:2', changes: { battery: { percent: 41 } } }],
+  removed: [],
+});
+
+// an extension key, declared as { key: 'x.acme.packLink', scope: 'channel', op: 'merge' }
+this.onState('x.acme.packLink', { channels: { 1: 'pack:1' } });
+```
+
+**Report meters as fast as your hardware does.** The shell coalesces
+`meters` to one patch per 50 ms per device, keeping the latest reading per
+channel, so the rate on the wire is bounded whatever you send. Every other
+key is sent as it arrives, except that a value identical to the last one you
+reported for that key is dropped — so reporting from a timer is free.
+
+**A call the contract refuses is dropped and reported, never lost quietly.**
+An unknown key, an extension key you did not declare, a `delta` on a key that
+only takes `merge`: the patch is dropped, a warning naming the key appears on
+the plugin in SoundBase's plugin manager, and the plugin log says why. If
+your state is not showing up, that warning is the first place to look.
+
+### `setProperty(command)`
+
+The `PropertyControl` module — optional, and the reason `open()` returns
+`properties`. Each descriptor names a property, its scope, whether it is
+writable, and its value type, in SoundBase's own `PropertyDescriptor` shape
+(`property-control.openapi.yaml`):
+
+```js
+properties: [
+  { id: 'txPower', scope: 'channel', access: 'readWrite',
+    stateBinding: { key: 'txPower' },
+    value: { type: 'enum', options: [10, 50, 100], unit: 'mW' } },
+  { id: 'frequency', scope: 'channel', access: 'readWrite',
+    stateBinding: { key: 'frequency' },
+    value: { type: 'number', min: 470, max: 608, step: 0.025, unit: 'MHz' } },
+]
+```
+
+SoundBase renders them in the device settings modal, and inline wherever the
+product layout has a `control` node naming the descriptor. When the user
+changes one, `setProperty` receives
+
+```js
+{ requestId, propertyId: 'txPower', channelIndex: 1, value: 100 }   // entityId for a receiver's property
+```
+
+**Apply it, then report the result through `onState`.** Do not return the new
+value: the shell answers `202 Accepted` as soon as `setProperty` resolves,
+and SoundBase updates the card only when the new value arrives as state.
+That is deliberate — the device is the truth, and a value it clamped or
+refused shows up exactly as the device has it. Throw `HttpError(400, …)` for
+a request that is wrong on its face (an unknown property, a value of the
+wrong type); throw anything else and the host sees `503`.
+
+`channelName` and `frequency` are ordinary properties here. SoundBase checks
+a new name against the product's manifest `channelName` rules before sending
+it, so what you receive already fits the device.
+
+### `close()`, `onWarnings`, `onFatal`
+
+As for the spectrum-analyzer adapter. `close()` stops your timers and
+releases the transport; `onWarnings` reports the complete current set of
+conditions worth a person's attention; `onFatal(err)` says the transport is
+gone. After `onFatal` the shell ignores anything the dead adapter still
+reports, so a late timer tick cannot resurrect a stale reading.
+
+---
+
 ## Errors and what the host sees
 
 | You do | The host sees |
 |---|---|
 | throw from `open()` | device `failed`, your message, `503 device_unavailable` |
+| throw `HttpError(400, …)` from `setProperty` | that status and code; anything else is `503 device_unavailable` |
+| call `onState` with a key the contract refuses | patch dropped, a `dropped-state-…` warning on the plugin, a line in the log |
 | throw from `applyConfig` / `startSweep` / `stopSweep` | `503 device_unavailable` with your message |
 | `throw new HttpError(409, 'busy', '…')` | that exact status and code — import `HttpError` from `@soundbase/plugin-shell` when you need a specific one |
 | call `onFatal(err)` | device `failed`, sweep stopped, adapter closed, process alive |
@@ -343,23 +492,25 @@ longer present` is worth ten of `Error: read ECONNRESET`.
 
 ## Plugin-level hooks
 
-`main.js` subclasses `SoundBasePlugin` and overrides exactly two methods:
+`main.js` subclasses `SoundBasePlugin`, overrides `discoverDevices`, and
+attaches whichever adapter factories `adapter.js` exports:
 
 ```js
+import * as adapter from './adapter.js';
+
 class Plugin extends SoundBasePlugin {
   async discoverDevices() {
-    return discoverDevices(this.config);
-  }
-  createSpectrumAnalyzerAdapter(device) {
-    return createSpectrumAnalyzerAdapter(device, this.config);
+    return adapter.discoverDevices?.(this.config) ?? [];
   }
 }
+if (typeof adapter.createSpectrumAnalyzerAdapter === 'function') { /* wired */ }
+if (typeof adapter.createMonitoringAdapter === 'function') { /* wired */ }
 ```
 
 **You almost certainly need nothing else.** `this.config` — the current values
-of your `pluginConfigFields` — is already threaded into both of your exports,
-which is why neither first-party plugin overrides anything further and why
-every `main.js` in existence is byte-identical.
+of your `pluginConfigFields` — is already threaded into every one of your
+exports, which is why no first-party plugin overrides anything further and
+why every `main.js` in existence is byte-identical.
 
 The base class does offer more, for the rare case where the plugin *as a
 whole*, not one device, has work to do:

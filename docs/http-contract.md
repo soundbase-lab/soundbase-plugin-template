@@ -10,6 +10,9 @@ Normative sources, installed with your dependencies:
 ```
 node_modules/@soundbase/plugin-contract/spec/core.openapi.yaml
 node_modules/@soundbase/plugin-contract/spec/spectrum-analyzer.openapi.yaml
+node_modules/@soundbase/plugin-contract/spec/channel-monitoring.openapi.yaml
+node_modules/@soundbase/plugin-contract/spec/property-control.openapi.yaml
+node_modules/@soundbase/plugin-contract/spec/state-keys.json
 ```
 
 ## The shape of it
@@ -23,8 +26,9 @@ node_modules/@soundbase/plugin-contract/spec/spectrum-analyzer.openapi.yaml
   `Authorization: Bearer <token>`. **With `SB_PLUGIN_TOKEN` unset — a plugin
   you started by hand — authentication is disabled**, which is what makes
   `curl` during development easy.
-- **Units.** Every frequency in hertz, including RBW, VBW and step size. Every
-  amplitude in dBm.
+- **Units.** In the SpectrumAnalyzer module every frequency is in hertz,
+  including RBW, VBW and step size, and every amplitude in dBm. In
+  ChannelMonitoring a tuned frequency is in MHz and transmit power in mW.
 - **Forward compatible.** Unknown modules and unknown properties are tolerated
   on both sides.
 
@@ -115,12 +119,13 @@ fully usable with no call at all.
 
 ### `GET /events`
 
-`text/event-stream`, carrying **lifecycle only**: `device-added`,
-`device-removed`, `device-status`, `plugin-status`, `config-changed`. A
-`: keepalive` comment every 15 seconds distinguishes a silent stream from a
-dead one.
+`text/event-stream`, carrying lifecycle — `device-added`, `device-removed`,
+`device-status`, `plugin-status`, `config-changed` — and, for monitored
+devices, the `device-state` event described under the ChannelMonitoring
+module below. A `: keepalive` comment every 15 seconds distinguishes a
+silent stream from a dead one.
 
-**Measurement data never travels here.** Traces are pulled from
+**Spectrum traces never travel here.** They are pulled from
 `GET /devices/{id}/trace`.
 
 ## SpectrumAnalyzer module
@@ -200,6 +205,47 @@ or after a host restart.
 - Optional `series` adds named curves sharing the same axis — per-antenna
   traces, say. Single-curve plugins omit it.
 
+## ChannelMonitoring module
+
+No endpoints of its own. A monitored device's state travels on `GET /events`
+as the `device-state` event, one envelope per emission:
+
+```
+event: device-state
+data: {"deviceId":"synthetic-iem:1","patches":[
+  {"key":"frequency","scope":"channel","operation":"merge","value":{"channels":{"1":518.1,"2":542.35}}}
+]}
+```
+
+The envelope is SoundBase's own state-patch format, verbatim — `key`,
+`scope`, `operation`, `entityKind` for entity keys, and `value`. Your adapter
+supplies `key` and `value` through `onState`; the shell fills in the rest
+from `state-keys.json` and your manifest's `stateKeys`. `meters` is
+coalesced to one envelope per 50 ms per device; other keys are sent as they
+change. The value shape of every core key is in
+`channel-monitoring.openapi.yaml`.
+
+`GET /devices` rows for these devices carry three extra fields once the
+device is open: `channelCount`, `layout` (the normalised product layout, or
+the replacement `open()` returned) and `properties`.
+
+## PropertyControl module
+
+### `POST /devices/{id}/commands`
+
+```json
+{ "requestId": "b7e3a1", "propertyId": "txPower", "channelIndex": 1, "value": 100 }
+```
+
+Sets one property named by a descriptor the device returned from `open()`;
+`entityId` instead of `channelIndex` for a receiver's property. Answers
+`202 { requestId }` as soon as the adapter's `setProperty` resolves — the
+new value is *not* in the response. It arrives on `device-state` when the
+device reports it, which is how SoundBase shows what the device actually
+settled on. `400` for a request wrong on its face (`unknown_property`, a
+value of the wrong type), `501` when the device's product has no monitoring
+adapter or the adapter has no `setProperty`.
+
 ## Errors
 
 ```json
@@ -208,7 +254,7 @@ or after a host restart.
 
 | Status | | |
 |---|---|---|
-| `400` | `bad_request`, `unknown_product`, `bad_config` | malformed, or naming something undeclared |
+| `400` | `bad_request`, `unknown_product`, `bad_config`, `unknown_property` | malformed, or naming something undeclared |
 | `401` | `unauthorized` | missing or wrong bearer token |
 | `404` | `unknown_device`, `not_found` | |
 | `409` | `not_configured`, `no_trace` | the operation is valid but too early |
@@ -232,7 +278,15 @@ curl -s -X POST localhost:$PORT/devices/$DEV/configuration \
   -d '{"startHz":470000000,"stopHz":616000000,"pointCount":11}'
 curl -s -X POST localhost:$PORT/devices/$DEV/sweep/start
 curl -s localhost:$PORT/devices/$DEV/trace
-curl -N localhost:$PORT/events        # watch lifecycle events
+curl -N localhost:$PORT/events        # watch lifecycle events and device-state
+
+IEM=synthetic-iem%3A1
+curl -s -X POST localhost:$PORT/devices \
+  -H 'content-type: application/json' \
+  -d '{"id":"synthetic-iem:1","product":"plugin:template/synthetic-iem"}'
+curl -s -X POST localhost:$PORT/devices/$IEM/commands \
+  -H 'content-type: application/json' \
+  -d '{"propertyId":"txPower","channelIndex":1,"value":100}'
 ```
 
 Add `-H "Authorization: Bearer $SB_PLUGIN_TOKEN"` if you started the plugin

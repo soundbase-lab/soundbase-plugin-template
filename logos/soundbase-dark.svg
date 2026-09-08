@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 24" role="img" aria-label="SoundBase">
+  <rect x="2" y="4" width="8" height="16" rx="2" fill="#f4f4f4"/>
+  <rect x="14" y="8" width="8" height="12" rx="2" fill="#f4f4f4"/>
+  <rect x="26" y="2" width="8" height="18" rx="2" fill="#f4f4f4"/>
+  <text x="38" y="17" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#f4f4f4">SB</text>
+</svg>

@@ -144,12 +144,17 @@ npm run manifest   # validate it against the contract's own schema
 
 ### Replace `adapter.js`
 
-This is the file you write. It exports exactly two things:
+This is the file you write. It exports `discoverDevices` and one adapter
+factory per module your products use:
 
 ```js
 export async function discoverDevices(pluginConfig) → Device[]
-export function createSpectrumAnalyzerAdapter(device, pluginConfig) → adapter
+export function createSpectrumAnalyzerAdapter(device, pluginConfig) → adapter   // spectrum sources
+export function createMonitoringAdapter(device, pluginConfig) → adapter         // receivers, IEM transmitters
 ```
+
+The template exports both, one synthetic device of each kind; a plugin for
+one kind of device keeps only the factory it needs.
 
 Full reference: [adapter-reference.md](adapter-reference.md). For a worked
 version against a real transport — discovery by probing, addressing from device
@@ -164,9 +169,10 @@ when you swap a transport.
 
 ### Do not edit `main.js`
 
-Sixteen lines of shell bootstrap, byte-identical across every plugin ever
-written against this contract. Anything you are tempted to put there belongs in
-`adapter.js`. `npm run doctor` warns if it has changed.
+A few lines of shell bootstrap, byte-identical across every plugin ever
+written against this contract: it wires whichever factories `adapter.js`
+exports. Anything you are tempted to put there belongs in `adapter.js`.
+`npm run doctor` warns if it has changed.
 
 ## 6. A first change, end to end
 

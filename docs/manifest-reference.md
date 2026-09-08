@@ -34,7 +34,7 @@ host still loads on an older one; that is deliberate and load-bearing.
 | `deviceConfigFields` | | The form SoundBase shows when a user adds one of your devices. |
 | `pluginConfigFields` | | The form for settings belonging to the plugin as a whole. |
 | `template` | | Lineage. Leave it alone — see below. |
-| `stateKeys` | | Reserved for future device classes. `[]` for a spectrum analyzer. |
+| `stateKeys` | | Every state key a `ChannelMonitoring` adapter may report: core keys by name, extension keys with their definition. `[]` for a spectrum analyzer. See below. |
 | `limits` | | `maxCommandsPerSecond`, `burst`, `maxInFlight`. Advisory. |
 
 > **Choose `id` before you publish anything.** It namespaces every
@@ -45,12 +45,17 @@ host still loads on an older one; that is deliberate and load-bearing.
 ## `contract`
 
 ```json
-"contract": { "core": "1.1", "modules": { "SpectrumAnalyzer": "1.0" } }
+"contract": {
+  "core": "1.2",
+  "modules": { "SpectrumAnalyzer": "1.0", "ChannelMonitoring": "1.0", "PropertyControl": "1.0" }
+}
 ```
 
-`core` is mandatory; `modules` names the capability modules you implement.
-`SpectrumAnalyzer` is the only one today. A matching **major** version is
-treated as compatible.
+`core` is mandatory; `modules` names the capability modules you implement —
+`SpectrumAnalyzer` for spectrum sources, `ChannelMonitoring` for receivers
+and IEM transmitters that appear in device monitoring, `PropertyControl` for
+writable settings on those. Declare the ones your adapter implements. A
+matching **major** version is treated as compatible.
 
 This is the **only** field that governs compatibility. Not `version`, and
 definitely not `template`.
@@ -77,12 +82,92 @@ of one.
 | `manufacturer` | **Required.** `{ id, name }`. |
 | `model` | **Required.** `{ id, name, displayName? }`. `displayName` is what the picker shows; `name` is the fallback. |
 | `family` | Optional. Groups related models. |
-| `capabilities` | What this product can do. `{ "spectrumAnalyzer": true }` for an analyzer. |
-| `traits` | Static facts about the model. `{ "isSpectrumAnalyzer": true }`. |
+| `capabilities` | What this product can do, keyed by SoundBase catalog capability id, each `true` or `"conditional"`. `{ "spectrumAnalyzer": true }` for an analyzer. **This is also what decides which adapter a device gets**: `spectrumAnalyzer` → `createSpectrumAnalyzerAdapter`; anything else → `createMonitoringAdapter`; both → both. |
+| `traits` | Static facts about the model. `{ "isSpectrumAnalyzer": true }`. For monitored devices, see below. |
+| `channelName` | Rules for channel names, for monitored devices. See below. |
+| `layout` | How SoundBase draws the product, for monitored devices. See below. |
 
 Support several models by listing several products and returning the right
 `product` per device from `discoverDevices`. One plugin, one manufacturer's
 range, is the usual shape.
+
+### Monitored devices
+
+A receiver or IEM transmitter is a product whose `capabilities` name what it
+reports and whose `traits` say what class of thing it is:
+
+```json
+{
+  "deviceTypeId": "plugin:acme-iem/tx2",
+  "manufacturer": {
+    "id": "acme", "name": "Acme",
+    "logo": { "light": "logos/acme-light.svg", "dark": "logos/acme-dark.svg" }
+  },
+  "model": { "id": "tx2", "name": "TX-2", "displayName": "Acme TX-2 Stereo IEM" },
+  "capabilities": { "meters": true, "frequency": true, "name": true, "mute": true, "receivers": true },
+  "traits": { "isTransmitter": true, "isIem": true, "isRackDevice": true, "channelCount": 2 },
+  "channelName": { "maxLength": 8, "uppercase": true, "allowsSpaces": true, "allowedChars": "^[A-Z0-9 _-]*$" },
+  "layout": { "channel": [ … ], "device": [ … ], "entities": { "receiver": [ … ] } }
+}
+```
+
+| | |
+|---|---|
+| `capabilities` | SoundBase catalog ids: `meters`, `frequency`, `name`, `mute`, `battery`, `receivers`, `gain`, `power`, … (the schema lists them). `"conditional"` means the device reports it per unit once opened. Unknown ids are tolerated. |
+| `traits` | `isReceiver`, `isTransmitter`, `isIem`, `isRackDevice`, `isPortable`, `isCharger`, `isBaseStation`, `channelCount`, `slotCount`. The device class is the combination — an IEM transmitter is `isTransmitter` + `isIem`; there is no `isMic`. For a combo unit, `channelRoles: ["rx", "rx", "iem"]` gives each channel its role and must agree with `channelCount`. |
+| `manufacturer.logo` | `{ light, dark }` — SVG or PNG files inside your plugin folder, at most 64 KB each, one per colour scheme. Shown on the device's cards. A bad file is a warning in the plugin manager, not a load failure. |
+| `channelName` | What SoundBase enforces before it sends a rename: `maxLength` (required), `uppercase`, `allowsSpaces`, `allowedChars` (an ECMAScript regular expression the whole name must match). |
+| `layout` | See next section. Omit it and SoundBase draws the standard receiver or IEM tile from the traits. |
+
+### `layout`
+
+How the device's cards are drawn: a tree of primitives in three **slots**,
+each bound by a dotted path to the state your adapter reports.
+
+| Slot | Drawn | Bind paths relative to |
+|---|---|---|
+| `channel` | once per channel | that channel's state — `frequency`, `meters.af`, `x.acme.packLink` |
+| `device` | once | the device — `deviceName`, `connection.connected` |
+| `entities.receiver` | once per receiver paired to the channel | the receiver — `name`, `battery`, `meters.rf1` |
+
+Seven node types:
+
+| Node | Fields | Draws |
+|---|---|---|
+| `meter` | `bind`, `metric`, `label?` | a level bar with the scale and colours of that metric: `AUDIO_LEVEL`, `AUDIO_LEVEL_RIGHT`, `RF_LEVEL`, `QUALITY`, `BATTERY`, `MUTE`, `INTERFERENCE`, `DIVERSITY` |
+| `indicator` | `bind`, `label?`, `tone?`, `on?` | a lamp, lit when the bound value equals `on` (default `true`) |
+| `value` | `bind`, `label?`, `unit?`, `format?`, `precision?` | text; `format` is `text`, `number`, `integer`, `frequency`, `dbm` or `percent` |
+| `battery` | `bind`, `label?` | a battery gauge from `{ percent, lifetimeInMinutes? }` or a bare percentage |
+| `text` | `text`, `tone?` | static text |
+| `group` | `children`, `label?`, `direction?` | a row or column of nodes |
+| `control` | `propertyId`, `label?` | a `PropertyControl` descriptor rendered inline |
+
+`tone` is one of the theme's semantic tones — `neutral`, `info`, `success`,
+`warning`, `destructive` — and is the only colour a layout may ask for.
+A node of a type this version does not define is dropped by the renderer, so
+a layout written for a newer SoundBase still draws what an older one knows.
+A node bound to a path that never arrives draws its empty state. The template
+plugin's second product carries a complete worked layout.
+
+### `stateKeys`
+
+The keys a `ChannelMonitoring` adapter may pass to `onState`:
+
+```json
+"stateKeys": [
+  "meters", "frequency", "channelName", "mute", "txPower", "receivers",
+  { "key": "x.acme-iem.packLink", "scope": "channel", "op": "merge" }
+]
+```
+
+A bare string must be a **core key** from
+`node_modules/@soundbase/plugin-contract/spec/state-keys.json` — SoundBase's
+own state vocabulary, whose scope and patch operation are fixed there. An
+**extension key** is anything SoundBase has no word for: it is named
+`x.<your-id>.<key>` so it can never collide with a core key, and it carries
+its own `scope` (`device` or `channel`) and `op` (`replace` or `merge`).
+Reporting a key that is not in this list is dropped and flagged as a warning
+on your plugin.
 
 ## Config fields
 
@@ -156,7 +241,7 @@ contract, and an old lineage does not make an incompatible plugin compatible.
   "license": "MIT",
   "repository": "https://github.com/acme/soundbase-plugin-acme",
   "maintainers": [{ "name": "Acme Instruments", "email": "support@acme.example" }],
-  "contract": { "core": "1.1", "modules": { "SpectrumAnalyzer": "1.0" } },
+  "contract": { "core": "1.2", "modules": { "SpectrumAnalyzer": "1.0" } },
   "runtime": { "type": "node", "entrypoint": "main.js" },
   "deployment": ["managed"],
   "template": { "name": "soundbase-plugin-template", "version": "1.0.0" },

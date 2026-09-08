@@ -2,18 +2,32 @@
   "manifestVersion": 1,
   "id": "template",
   "name": "SoundBase Plugin Template",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "license": "BUSL-1.1",
   "repository": "https://github.com/your-org/soundbase-plugin-template",
   "maintainers": [{ "name": "Your Name", "email": "you@example.com" }],
-  "contract": { "core": "1.1", "modules": { "SpectrumAnalyzer": "1.0" } },
+  "contract": {
+    "core": "1.2",
+    "modules": {
+      "SpectrumAnalyzer": "1.0",
+      "ChannelMonitoring": "1.0",
+      "PropertyControl": "1.0"
+    }
+  },
   "runtime": { "type": "node", "entrypoint": "main.js" },
   "deployment": ["managed"],
-  "template": { "name": "soundbase-plugin-template", "version": "1.0.3" },
+  "template": { "name": "soundbase-plugin-template", "version": "1.0.5" },
   "products": [
     {
       "deviceTypeId": "plugin:template/synthetic",
-      "manufacturer": { "id": "soundbase", "name": "SoundBase" },
+      "manufacturer": {
+        "id": "soundbase",
+        "name": "SoundBase",
+        "logo": {
+          "light": "logos/soundbase-light.svg",
+          "dark": "logos/soundbase-dark.svg"
+        }
+      },
       "model": {
         "id": "synthetic",
         "name": "Synthetic",
@@ -22,6 +36,101 @@
       "family": { "id": "template", "name": "Template" },
       "capabilities": { "spectrumAnalyzer": true },
       "traits": { "isSpectrumAnalyzer": true }
+    },
+    {
+      "deviceTypeId": "plugin:template/synthetic-iem",
+      "manufacturer": {
+        "id": "soundbase",
+        "name": "SoundBase",
+        "logo": {
+          "light": "logos/soundbase-light.svg",
+          "dark": "logos/soundbase-dark.svg"
+        }
+      },
+      "model": {
+        "id": "synthetic-iem",
+        "name": "Synthetic IEM",
+        "displayName": "Synthetic Stereo IEM"
+      },
+      "family": { "id": "template", "name": "Template" },
+      "capabilities": {
+        "meters": true,
+        "frequency": true,
+        "name": true,
+        "mute": true,
+        "receivers": true
+      },
+      "traits": {
+        "isTransmitter": true,
+        "isIem": true,
+        "isRackDevice": true,
+        "channelCount": 2
+      },
+      "channelName": {
+        "maxLength": 8,
+        "uppercase": true,
+        "allowsSpaces": true,
+        "allowedChars": "^[A-Z0-9 _-]*$"
+      },
+      "layout": {
+        "channel": [
+          {
+            "type": "group",
+            "direction": "row",
+            "children": [
+              {
+                "type": "meter",
+                "bind": "meters.af",
+                "metric": "AUDIO_LEVEL",
+                "label": "L"
+              },
+              {
+                "type": "meter",
+                "bind": "meters.afR",
+                "metric": "AUDIO_LEVEL_RIGHT",
+                "label": "R"
+              }
+            ]
+          },
+          {
+            "type": "value",
+            "bind": "frequency",
+            "format": "frequency",
+            "unit": "MHz"
+          },
+          {
+            "type": "value",
+            "bind": "txPower",
+            "format": "integer",
+            "unit": "mW",
+            "label": "TX"
+          },
+          {
+            "type": "indicator",
+            "bind": "mute",
+            "label": "Mute",
+            "tone": "warning"
+          },
+          {
+            "type": "indicator",
+            "bind": "rfState",
+            "label": "RF",
+            "tone": "success"
+          },
+          { "type": "control", "propertyId": "txPower" }
+        ],
+        "device": [
+          { "type": "text", "text": "Synthetic stereo IEM transmitter" }
+        ],
+        "entities": {
+          "receiver": [
+            { "type": "value", "bind": "name" },
+            { "type": "battery", "bind": "battery" },
+            { "type": "meter", "bind": "meters.rf1", "metric": "RF_LEVEL" },
+            { "type": "meter", "bind": "meters.lqi", "metric": "QUALITY" }
+          ]
+        }
+      }
     }
   ],
   "pluginConfigFields": [
@@ -32,5 +141,14 @@
       "default": 50
     }
   ],
-  "stateKeys": []
+  "stateKeys": [
+    "meters",
+    "frequency",
+    "channelName",
+    "mute",
+    "txPower",
+    "rfState",
+    "receivers",
+    { "key": "x.template.packLink", "scope": "channel", "op": "merge" }
+  ]
 }

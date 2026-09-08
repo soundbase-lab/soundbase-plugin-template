@@ -41,7 +41,7 @@ const contentHash = (buf) =>
 // Stamped by scripts/build-template-repo.mjs when this repository is
 // assembled, so it always matches the main.js shipped beside it. Do not edit.
 const MAIN_JS_SHA256 =
-  '7a5d1642fe69418c695b5e17a549aabbe8f605dab446b8add8ce9674e801f1a5';
+  '1bb36816dcfa1d8f748ceb40b5a655bd01ce357ab9a597e25bf9f33295dd84ca';
 
 let failures = 0;
 let warnings = 0;
@@ -227,14 +227,26 @@ if (!has('adapter.js')) {
     }
   );
   if (adapter) {
-    for (const fn of ['discoverDevices', 'createSpectrumAnalyzerAdapter']) {
-      if (typeof adapter[fn] === 'function') ok(`exports ${fn}()`);
-      else
-        bad(
-          `adapter.js does not export ${fn}()`,
-          'main.js imports both by name'
-        );
-    }
+    if (typeof adapter.discoverDevices === 'function')
+      ok('exports discoverDevices()');
+    else
+      bad(
+        'adapter.js does not export discoverDevices()',
+        'main.js calls it while SoundBase enumerates devices'
+      );
+    // one factory per module; main.js wires whichever exist, and a plugin
+    // with neither has nothing for the shell to open
+    const factories = [
+      'createSpectrumAnalyzerAdapter',
+      'createMonitoringAdapter',
+    ].filter((fn) => typeof adapter[fn] === 'function');
+    if (factories.length) ok(`exports ${factories.join(', ')}`);
+    else
+      bad(
+        'adapter.js exports no adapter factory',
+        'export createSpectrumAnalyzerAdapter() for a spectrum source, ' +
+          'createMonitoringAdapter() for a receiver or IEM transmitter'
+      );
 
     // the rename trap, checked without booting anything
     const declared = (manifest?.products ?? []).map((p) => p.deviceTypeId);

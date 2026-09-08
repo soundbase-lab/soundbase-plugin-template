@@ -43,6 +43,8 @@ node_modules/@soundbase/plugin-contract/spec/
   soundbase-plugin.schema.json     the manifest schema
   core.openapi.yaml                identity, devices, config, events, health
   spectrum-analyzer.openapi.yaml   configuration, sweep control, traces
+  channel-monitoring.openapi.yaml  the device-state event, state key value shapes, layouts
+  property-control.openapi.yaml    property descriptors and the commands endpoint
 ```
 
 They ship inside the contract package rather than as a copy that might have
