@@ -212,7 +212,7 @@ protects *SoundBase*; you need your own boundary to protect *yourself*.
 | `npm run manifest` | validate `soundbase-plugin.json` against the contract schema |
 | `npm run rename <id>` | take an id, in all four places it appears |
 | `npm run pack:release` | build the zip users install, and boot-check it |
-| `npm run release <x.y.z>` | tag, pack, and publish a GitHub Release |
+| `npm run bump <x.y.z>` | move the version in every file that carries it; tag and push to release |
 
 ## The specification
 
@@ -252,6 +252,11 @@ Two version numbers that mean different things:
 **`contract` is the only thing that governs compatibility.** Two plugins built
 from different template versions can speak exactly the same contract, and an
 old lineage does not make an incompatible plugin compatible.
+
+**One repository, one plugin.** A release is one zip carrying one
+`soundbase-plugin.json`, and a repository backs exactly one listing on the
+SoundBase Lab — a new version is a new release on that listing, and a second
+plugin needs its own repository.
 
 ## Working with Claude
 

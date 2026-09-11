@@ -48,7 +48,9 @@ const updated = manifest.replace(
   `$1"${version}"`
 );
 if (updated === manifest && read('soundbase-plugin.json').version !== version) {
-  process.stderr.write('soundbase-plugin.json has no top-level "version" line to update\n');
+  process.stderr.write(
+    'soundbase-plugin.json has no top-level "version" line to update\n'
+  );
   process.exit(1);
 }
 writeFileSync(manifestPath, updated);
@@ -58,5 +60,7 @@ if (check !== version) {
   process.stderr.write(`manifest says ${check} after writing ${version}\n`);
   process.exit(1);
 }
-process.stderr.write(`${before} -> ${version} in package.json, package-lock.json, soundbase-plugin.json\n`);
+process.stderr.write(
+  `${before} -> ${version} in package.json, package-lock.json, soundbase-plugin.json\n`
+);
 process.stdout.write(`${version}\n`);

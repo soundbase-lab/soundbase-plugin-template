@@ -4,6 +4,7 @@
   "name": "Acme Networked Analyzer",
   "version": "0.1.0",
   "license": "BUSL-1.1",
+  "platforms": ["darwin-arm64", "darwin-x64", "win32-x64"],
   "contract": { "core": "1.2", "modules": { "SpectrumAnalyzer": "1.0" } },
   "runtime": { "type": "node", "entrypoint": "main.js" },
   "deployment": ["managed"],

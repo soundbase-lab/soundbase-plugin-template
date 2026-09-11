@@ -28,6 +28,7 @@ host still loads on an older one; that is deliberate and load-bearing.
 | `runtime` | ✓ | `{ "type": "node", "entrypoint": "main.js" }`. `node` is the only runtime type today, and the entrypoint must resolve inside your plugin folder. |
 | `products` | ✓ | At least one. The models you provide. |
 | `license` | | SPDX id or licence name. **Required by the Lab** before it will accept a release. |
+| `platforms` | | Which SoundBase Desktop builds this plugin runs on, as `<process.platform>-<process.arch>`: any of `darwin-arm64` (macOS ARM), `darwin-x64` (macOS Intel), `win32-x64` (Windows 64-bit). **Required by the Lab** before it will accept a release. Shown as icons on your listing; Desktop refuses to install or run the plugin on a machine you did not list. Declare only what you have actually run — see [native-runtimes.md](native-runtimes.md). A manifest without it loads on every machine, ungated. |
 | `repository` | | URL. Shown to users deciding whether to trust you. |
 | `maintainers` | | `[{ name, email?, url? }]` |
 | `deployment` | | `["managed"]` — spawned and supervised by SoundBase. `"attached"` (a plugin running elsewhere on the network) is reserved and not yet supported. |

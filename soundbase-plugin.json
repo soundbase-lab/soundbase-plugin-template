@@ -2,8 +2,9 @@
   "manifestVersion": 1,
   "id": "template",
   "name": "SoundBase Plugin Template",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "license": "BUSL-1.1",
+  "platforms": ["darwin-arm64", "darwin-x64", "win32-x64"],
   "repository": "https://github.com/your-org/soundbase-plugin-template",
   "maintainers": [{ "name": "Your Name", "email": "you@example.com" }],
   "contract": {
@@ -16,7 +17,7 @@
   },
   "runtime": { "type": "node", "entrypoint": "main.js" },
   "deployment": ["managed"],
-  "template": { "name": "soundbase-plugin-template", "version": "1.0.6" },
+  "template": { "name": "soundbase-plugin-template", "version": "1.0.8" },
   "products": [
     {
       "deviceTypeId": "plugin:template/synthetic",

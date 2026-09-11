@@ -14,11 +14,9 @@
 # itself rather than handing off to the tag path.
 #
 # The version in the tag must match `version` in soundbase-plugin.json and
-# package.json — bump and commit those first. `npm run release 0.5.0` does the
-# bump, the tag and the release from your own machine instead, and needs a
-# SoundBase checkout to pack with; this needs nothing but the runner. Either
-# way is fine, and running the script does not make this workflow publish a
-# second release: it stands down when the tag already has one.
+# package.json — `npm run bump 0.5.0` moves it; commit and tag that. This
+# needs nothing but the runner, and it stands down when the tag already has a
+# Release, so a Release cut by hand is never duplicated.
 #
 # This is a starting point. Things you may want to add: a build step for a
 # compiled driver, a matrix if you ship per-platform binaries, or signing.
@@ -180,8 +178,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_type == 'tag' && github.ref_name || steps.bump.outputs.tag }}
         run: |
-          # `npm run release` cuts the tag and the Release together, so on that
-          # path the Release is already here and correct. Do not fight it.
+          # a release cut by hand for this tag is already here and correct
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "::notice::$TAG already has a Release — leaving it alone"
             exit 0

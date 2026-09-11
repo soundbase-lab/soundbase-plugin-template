@@ -159,8 +159,8 @@ supervises your plugin process.
 prints on stdout to say it is listening. No handshake, no plugin.
 
 **Core plugin** — a plugin shipped inside the SoundBase installer, always on
-and invisible in the plugin manager. tinySA and USRP are core plugins. Yours
-will not be one.
+and invisible in the plugin manager. The tinySA plugins are core plugins.
+Yours will not be one.
 
 **The Lab** — SoundBase's directory of plugins, and the route by which a user
 installs yours. See [publishing.md](publishing.md).

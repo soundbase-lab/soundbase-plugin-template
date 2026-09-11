@@ -20,8 +20,8 @@ cd my-plugin
 ```
 
 > **Use the button rather than cloning this repository directly.** A clone
-> keeps this repository as its `origin`, so your first `npm run release` would
-> try to tag and publish a release *here*, and fail. It also inherits this
+> keeps this repository as its `origin`, so your first tag push would try to
+> publish a release *here*, and fail. It also inherits this
 > repository's history, which is regenerated wholesale on every SDK release and
 > is not a history you want to build on. The button gives you a clean repository
 > you own, with no history and the right `origin`.
