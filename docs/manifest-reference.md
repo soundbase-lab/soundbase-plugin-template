@@ -47,7 +47,7 @@ host still loads on an older one; that is deliberate and load-bearing.
 
 ```json
 "contract": {
-  "core": "1.2",
+  "core": "1.3",
   "modules": { "SpectrumAnalyzer": "1.0", "ChannelMonitoring": "1.0", "PropertyControl": "1.0" }
 }
 ```
@@ -242,7 +242,7 @@ contract, and an old lineage does not make an incompatible plugin compatible.
   "license": "MIT",
   "repository": "https://github.com/acme/soundbase-plugin-acme",
   "maintainers": [{ "name": "Acme Instruments", "email": "support@acme.example" }],
-  "contract": { "core": "1.2", "modules": { "SpectrumAnalyzer": "1.0" } },
+  "contract": { "core": "1.3", "modules": { "SpectrumAnalyzer": "1.0" } },
   "runtime": { "type": "node", "entrypoint": "main.js" },
   "deployment": ["managed"],
   "template": { "name": "soundbase-plugin-template", "version": "1.0.0" },

@@ -60,9 +60,12 @@ do not change the status itself — `[{ id, severity, message, since? }]`, with
 `severity` one of `info`, `warning`, `critical`, rendered by SoundBase as three
 colours. The array is the complete current set; absent means none.
 
-Statuses are `connecting`, `ok`, `failed`, `bad-config` — and, for devices
-only, `disconnected`. `bad-config` means the supplied configuration cannot
-work; `failed` is a runtime failure worth retrying.
+Statuses are `connecting`, `ok`, `failed`, `bad-config`, `needs-setup` — and,
+for devices only, `disconnected`. `bad-config` means the supplied
+configuration cannot work; `failed` is a runtime failure worth retrying;
+`needs-setup` (core 1.3) means the plugin is waiting on something the user has
+to do on this machine outside its configuration — install a toolchain, fetch
+firmware images — and will report again by itself once it is done.
 
 ### `GET /devices`
 

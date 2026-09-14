@@ -523,12 +523,17 @@ whole*, not one device, has work to do:
 | `get config()` | latest `pluginConfigFields` values |
 | `get manifest()` | the parsed manifest |
 | `log(level, message)` | into the host's per-plugin log, which the user can open |
-| `updateStatus(status, message)` | `'ok'`, `'failed'` or `'bad-config'` for the plugin itself |
+| `updateStatus(status, message)` | `'ok'`, `'failed'`, `'bad-config'` or `'needs-setup'` for the plugin itself |
 
 Throwing from `init` or `configUpdated` marks the plugin `bad-config` with your
 message — the right response to "the address field is empty", which is a
 configuration problem the user can fix, as distinct from a runtime failure
-worth retrying.
+worth retrying. `needs-setup` (core 1.3) is for the third case: nothing in the
+configuration is wrong, but this machine is missing something the plugin
+cannot install for itself — a compiler, a driver, firmware images. Report it
+with a message that names the exact commands, keep looking on a timer, and
+report `ok` yourself when they have been run; the badge reads "Needs setup"
+rather than "Bad config", and no setting has to be touched to clear it.
 
 Adding one of these is the only legitimate reason to touch `main.js`. Keep the
 change inside the class body; leave the imports and the `runPlugin` call
