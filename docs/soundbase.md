@@ -93,8 +93,8 @@ lost because nobody was looking.
 
 **The device picker.** Users choose a live-scan device from a dropdown in the
 plot's Live Scan Data Settings. Today it lists first-party integrations
-(tinySA over USB, Owon over SCPI, Wisycom, Sennheiser Spectera, and a generic
-analyzer bridge). **A plugin's devices appear in that same list**, described by
+(tinySA over USB, Owon over SCPI, Wisycom, and Sennheiser Spectera). **A
+plugin's devices appear in that same list**, described by
 the `products` in your manifest, and are configured by the fields your manifest
 declares. Nothing about your device is special-cased in SoundBase — which is
 the point: your plugin can ship a new instrument without SoundBase shipping

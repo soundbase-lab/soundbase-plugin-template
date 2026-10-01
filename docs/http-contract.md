@@ -163,6 +163,9 @@ Responds with the **effective** configuration after clamping:
 - `pointCount` wins over `stepHz`; responses echo both.
 - Omitting `rbwHz` means auto — what the analyzer chose appears under
   `resolved`, while `rbwHz` itself stays absent.
+- `resolved.sweepTimeMs` (SpectrumAnalyzer 1.2), when present, is how long one
+  sweep at these settings takes. The host's stall watchdog waits a few of them
+  before it calls a quiet device stalled.
 - `controls` is merged by id, so a request carrying one knob leaves the others
   in force. An explicit `null` is a value, not an erasure.
 - Overlapping requests **coalesce to the latest**; intermediate configurations
@@ -207,6 +210,20 @@ or after a host restart.
 - `409 no_trace` until the first sweep completes.
 - Optional `series` adds named curves sharing the same axis — per-antenna
   traces, say. Single-curve plugins omit it.
+
+### `POST /devices/{id}/control` — SpectrumAnalyzer 1.1
+
+For a device whose capabilities say `sharedControl`. The body is
+`{ "action": "take" }` or `{ "action": "release" }`; the answer is who controls
+the device now:
+
+```json
+{ "control": { "state": "you" } }
+```
+
+The device's `control` also rides on `GET /devices` and the `device-status`
+event (core 1.4): `{ "state": "other", "holderName": "Matts-MacBook-Pro" }`.
+`501 module_not_supported` for a device whose adapter cannot share control.
 
 ## ChannelMonitoring module
 

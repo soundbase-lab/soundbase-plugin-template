@@ -17,9 +17,7 @@
 // strands every device they configured.
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 
-const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const log = (msg) => process.stdout.write(`[rename] ${msg}\n`);
 const fail = (msg) => {
   process.stderr.write(`[rename] ERROR: ${msg}\n`);

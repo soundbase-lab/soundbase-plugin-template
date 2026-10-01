@@ -188,6 +188,18 @@ const [rbw] = await this.client.setting('RBW AUTO');
 return { startHz, stopHz, pointCount, resolved: { rbwHz: Number(rbw) } };
 ```
 
+**Sweep time (SpectrumAnalyzer 1.2).** If a sweep can take more than a couple of seconds — many
+points, a narrow RBW — report how long one takes at the settings you just
+applied as `resolved.sweepTimeMs`. SoundBase waits a few of those before it
+calls a quiet device stalled. Without it SoundBase has to learn the device's
+speed from its sweeps, and the first sweep slower than 20 seconds reads as a
+stall. An estimate is fine; the tinySA plugins use their command-deadline
+formula.
+
+```js
+return { startHz, stopHz, pointCount, resolved: { sweepTimeMs: 12_500 } };
+```
+
 **Overlapping calls coalesce.** While one configuration is being applied, a
 newer request supersedes any still-pending one; intermediate configurations are
 dropped rather than queued, and traces produced mid-reconfigure are discarded.
@@ -298,6 +310,23 @@ reach the host. The `?.` matters: a shell built for core 1.0 never assigns it,
 and your plugin should still run there. For conditions about the plugin as a
 whole rather than one device, `this.updateWarnings(list)` on the plugin class
 does the same thing at plugin level.
+
+### Shared control — SpectrumAnalyzer 1.1
+
+For an analyzer several clients reach at once — a network box two SoundBase
+computers share — where only one may change what it sweeps. Return
+`capabilities.sharedControl: true` from `open()` and implement what applies:
+
+| | |
+|---|---|
+| `onControl(control)` (assigned to you) | Call it whenever who controls the device changes: `{ state, holderName? }`, where `state` is `you`, `other`, `free` or `released` from this client's side, and `holderName` names the holder when it is someone else. It reaches the host as the device's `control` (core 1.4). |
+| `onEffectiveConfig(applied)` (assigned to you) | Call it when the device sweeps a configuration this client did not apply — the holder retuned it — with the shape `applyConfig` resolves. The shell labels traces with it from then on, so a client that follows still draws the right frequencies. |
+| `takeControl()` → `control` | Make this client the holder, from whoever held it. The host then applies its own configuration. |
+| `releaseControl()` → `control` | Give control up, if this client holds it. |
+
+`POST /devices/{id}/control` answers `501 module_not_supported` for an adapter
+without them. Use `?.` on the two callbacks, as with `onWarnings`: a 1.0 shell
+never assigns them.
 
 ---
 
