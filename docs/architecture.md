@@ -10,7 +10,7 @@ called the *shell* implements everything else.
 
 ```
 ┌─────────────────────────────────────────┐
-│ SoundBase Desktop (Electron)            │
+│ SoundBase Desktop                       │
 │                                         │
 │   plot, device picker, plugin manager   │
 │                     │                   │

@@ -95,7 +95,7 @@ otherwise never exercise.
 If your driver runs a native library or a separate runtime, give the worker a
 mock mode rather than a mock at the JavaScript boundary; that way the process
 plumbing is under test too. See
-[native-runtimes.md](native-runtimes.md#5-testing-without-hardware).
+[native-runtimes.md](native-runtimes.md#4-testing-without-hardware).
 
 ## What is worth testing
 

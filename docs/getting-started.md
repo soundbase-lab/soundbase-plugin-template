@@ -8,11 +8,16 @@ From nothing to a running plugin, then to a plugin that is yours.
   account.
 - SoundBase Desktop, eventually, if you want to see your device in the app —
   but not for anything on this page.
+- **A GitHub account, and a plugin you are willing to make public.** A plugin
+  reaches users through the Lab, which lists a **public repository on
+  GitHub** and installs from its GitHub Releases. A private repository cannot
+  be listed, and no other host works. See [publishing.md](publishing.md).
 
 ## 1. Get the code
 
 Press **Use this template → Create a new repository** at the top of this
-repository's GitHub page, then clone the repository that gives you:
+repository's GitHub page, choose **Public**, then clone the repository that
+gives you:
 
 ```bash
 git clone https://github.com/<you>/<your-plugin> my-plugin
@@ -120,11 +125,13 @@ npm run rename my-plugin-id
 npm run rename my-plugin-id -- --name "My Analyzer"
 ```
 
-The plugin id appears in four places that must agree — the manifest `id`, the
+The plugin id appears in five places that must agree — the manifest `id`, the
 `plugin:<id>/<model>` prefix on every product, the `PRODUCT` constant in
-`adapter.js`, and the npm package name. `rename` changes all four. A mismatch
-produces a plugin that boots, discovers a device, and then has that device
-silently ignored.
+`adapter.js`, the npm package name, and the `x.<id>.` namespace of every
+extension state key (in the manifest, `adapter.js` and the tests). `rename`
+changes all five. A mismatched product id produces a plugin that boots,
+discovers a device, and then has that device silently ignored; a mismatched
+extension key produces a manifest SoundBase refuses, so the plugin never boots.
 
 **Do this before you publish anything.** The id namespaces every
 `deviceTypeId` you ship and is stored inside users' saved projects, so
@@ -227,9 +234,18 @@ SoundBase knows what attenuation is.
 
 ## 7. See it in the app
 
-[running-in-soundbase.md](running-in-soundbase.md) covers where to put the
-folder, the feature flag that gates third-party plugins, the plugin manager,
-and where the logs are.
+While you are developing, leave the folder where it is and point SoundBase
+Desktop at its *parent* with `SB_PLUGIN_DIRS`:
+
+```bash
+# macOS — this checkout is ~/CODE/my-plugin
+SB_PLUGIN_DIRS="$HOME/CODE" open -a "SoundBase Desktop"
+```
+
+Quit the app first: a copy that is already running does not see the variable.
+
+[running-in-soundbase.md](running-in-soundbase.md) covers the plugin manager,
+where your device shows up, and how to read the plugin's log.
 
 ## Where to go next
 

@@ -28,8 +28,8 @@ live scan, exclusion threshold).
 | | |
 |---|---|
 | [testing.md](testing.md) | The three checks, faking hardware you don't have, what's worth asserting. |
-| [running-in-soundbase.md](running-in-soundbase.md) | Where the folder goes, the feature flag, the plugin manager, the logs. |
-| [native-runtimes.md](native-runtimes.md) | Native libraries, bundled interpreters, code signing. **Read this before designing anything that needs one.** |
+| [running-in-soundbase.md](running-in-soundbase.md) | Running a working tree in place with `SB_PLUGIN_DIRS`, the plugin manager, where your device shows up, the logs. |
+| [native-runtimes.md](native-runtimes.md) | Native libraries and bundled interpreters. **Read this before designing anything that needs one.** |
 | [publishing.md](publishing.md) | Releases, the Lab, licensing. |
 | [troubleshooting.md](troubleshooting.md) | Symptom → cause. Start with `npm run doctor`. |
 

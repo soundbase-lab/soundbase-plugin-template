@@ -41,7 +41,7 @@ host still loads on an older one; that is deliberate and load-bearing.
 > **Choose `id` before you publish anything.** It namespaces every
 > `deviceTypeId` you ship, and those ids are saved inside users' projects.
 > Changing it later strands every device they configured. `npm run rename
-> <id>` updates the four places it appears.
+> <id>` updates the five places it appears.
 
 ## `contract`
 
@@ -197,7 +197,7 @@ declares at `open()`. Learn it once.
 | `choices` | | `[{ id, label }]`. Required for `dropdown`, ignored otherwise. |
 | `unit` | | Suffix shown beside the input, e.g. `dBm`, `Hz`. |
 | `min`, `max`, `step` | | For `number`. **Advisory — clamp in the adapter too.** |
-| `help` | | Helper text under the input. |
+| `help` | | Helper text under the input. A small subset of Markdown is rendered — see [Text the user reads](adapter-reference.md#text-the-user-reads). For a `static-text` field, this or `default` is the note itself. |
 
 **Which list does a field belong in?**
 

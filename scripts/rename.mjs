@@ -5,18 +5,20 @@
 //   node scripts/rename.mjs acme-analyzer --name "Acme Analyzer"
 //   node scripts/rename.mjs acme-analyzer --dry-run
 //
-// The plugin id appears in four places that must agree: the manifest's `id`,
+// The plugin id appears in five places that must agree: the manifest's `id`,
 // the `plugin:<id>/<model>` prefix of every product's `deviceTypeId`, the
-// `PRODUCT` constant in adapter.js, and the npm package name. Changing one and
-// missing another produces a plugin that boots, discovers a device, and then
-// has that device silently ignored by the host — with one warning line in the
-// plugin log as the only clue.
+// `PRODUCT` constant in adapter.js, the npm package name, and the `x.<id>.`
+// namespace of every extension state key. Changing one and missing another
+// produces a plugin that boots, discovers a device, and then has that device
+// silently ignored by the host — with one warning line in the plugin log as
+// the only clue — or, for an extension key, a manifest the host refuses and a
+// plugin that never boots at all.
 //
 // DO THIS BEFORE YOU PUBLISH ANYTHING. The id namespaces every deviceTypeId
 // you ship and is stored inside users' saved projects, so changing it later
 // strands every device they configured.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const log = (msg) => process.stdout.write(`[rename] ${msg}\n`);
 const fail = (msg) => {
@@ -46,6 +48,7 @@ if (!id || !/^[a-z0-9][a-z0-9-]*$/.test(id)) {
 const manifestPath = new URL('../soundbase-plugin.json', import.meta.url);
 const packagePath = new URL('../package.json', import.meta.url);
 const adapterPath = new URL('../adapter.js', import.meta.url);
+const testsDir = new URL('../__tests__/', import.meta.url);
 
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 const oldId = manifest.id;
@@ -84,6 +87,33 @@ for (const product of manifest.products ?? []) {
   }
 }
 
+// -- extension state keys ----------------------------------------------------
+//
+// The contract namespaces an extension key by the plugin's own id —
+// `x.<id>.<key>` — and refuses a manifest declaring one under any other id. So
+// the namespace moves with the id, everywhere the key is spelled out: where the
+// manifest declares and binds it, where the adapter emits it, and where the
+// tests read it back.
+
+const extensionRe = new RegExp(
+  `(?<![A-Za-z0-9_.-])x\\.${oldId}\\.(?=[A-Za-z0-9_-])`,
+  'g'
+);
+const renameExtensionKeys = (text, label) => {
+  const hits = (text.match(extensionRe) ?? []).length;
+  if (hits > 0) {
+    changes.push(
+      `${label.padEnd(22)} ${hits} extension key(s): x.${oldId}.* -> x.${id}.*`
+    );
+  }
+  return text.replace(extensionRe, `x.${id}.`);
+};
+
+const manifestNext = renameExtensionKeys(
+  `${JSON.stringify(manifest, null, 2)}\n`,
+  'soundbase-plugin.json'
+);
+
 // -- package.json ------------------------------------------------------------
 
 const pkgText = readFileSync(packagePath, 'utf8');
@@ -100,7 +130,7 @@ if (displayName) pkg.description = `SoundBase plugin: ${displayName}.`;
 
 const adapterText = readFileSync(adapterPath, 'utf8');
 const productRe = new RegExp(`plugin:${oldId}/`, 'g');
-const adapterNext = adapterText.replace(productRe, `plugin:${id}/`);
+const adapterRenamed = adapterText.replace(productRe, `plugin:${id}/`);
 const adapterHits = (adapterText.match(productRe) ?? []).length;
 if (adapterHits === 0) {
   log(
@@ -108,6 +138,26 @@ if (adapterHits === 0) {
   );
 } else {
   changes.push(`adapter.js             ${adapterHits} product id(s) rewritten`);
+}
+const adapterNext = renameExtensionKeys(adapterRenamed, 'adapter.js');
+
+// -- __tests__ ---------------------------------------------------------------
+//
+// The suite reads the product ids from the manifest, but it names the extension
+// keys it expects on the stream literally.
+
+const testFiles = [];
+let testNames = [];
+try {
+  testNames = readdirSync(testsDir).filter((f) => f.endsWith('.test.js'));
+} catch {
+  // no __tests__ directory: nothing to rewrite
+}
+for (const name of testNames) {
+  const path = new URL(name, testsDir);
+  const text = readFileSync(path, 'utf8');
+  const next = renameExtensionKeys(text, `__tests__/${name}`);
+  if (next !== text) testFiles.push({ path, next });
 }
 
 // -- apply -------------------------------------------------------------------
@@ -119,12 +169,13 @@ if (dryRun) {
   process.exit(0);
 }
 
-writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+writeFileSync(manifestPath, manifestNext);
 writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`);
 writeFileSync(adapterPath, adapterNext);
+for (const file of testFiles) writeFileSync(file.path, file.next);
 
 log(
-  'done. Next: `npm test` (the suite reads the manifest, so it should still pass),'
+  'done. Next: `npm test` (the suite follows the new id, so it should still pass),'
 );
 log(
   'then update README.md, LICENSE and the repository/maintainers fields by hand.'

@@ -5,68 +5,45 @@ step: getting your plugin into the app and seeing its trace on the plot.
 
 ## Before you start
 
-- **SoundBase Desktop.** Plugins are spawned by the desktop app. There is no
-  browser path — the browser cannot reach your USB cable.
-- **The `plugin-system` feature flag,** enabled for your account. Third-party
-  drop-in plugins are gated behind it while the plugin system is in
-  development. Ask your SoundBase contact to switch it on; without it your
-  plugin is scanned, listed as disabled, and never spawned.
+You need **SoundBase Desktop**. Plugins are spawned by the desktop app; there
+is no browser path — the browser cannot reach your USB cable.
 
-## Where the plugin folder goes
+## Pointing SoundBase at your working tree
 
-SoundBase scans `<userData>/plugins` for folders containing a
-`soundbase-plugin.json`. Each direct child of that directory is one plugin.
-
-| | |
-|---|---|
-| macOS | `~/Library/Application Support/SoundBase Desktop/plugins` |
-| Windows | `%APPDATA%\SoundBase Desktop\plugins` |
-| Linux | `~/.config/SoundBase Desktop/plugins` |
-
-```
-plugins/
-  my-plugin/
-    soundbase-plugin.json
-    main.js
-    adapter.js
-    node_modules/          ← must be present; nothing installs it for you
-```
-
-**The dependencies have to be there.** SoundBase runs `main.js` as-is; it does
-not install anything. A folder without `node_modules/@soundbase/plugin-shell`
-fails at its first import, which looks exactly like a plugin that never
-handshakes.
-
-### The development shortcut
-
-Copying a folder after every edit gets old immediately. Instead, point
-SoundBase at your working tree with the `SB_PLUGIN_DIRS` environment variable —
-a path-separated list of extra scan roots:
+Start the app with the `SB_PLUGIN_DIRS` environment variable set to the folder
+that *contains* your plugin folder. It is a path-separated list, so several
+parents can be given at once.
 
 ```bash
-# macOS
+# macOS — the plugin is ~/CODE/my-plugin
 SB_PLUGIN_DIRS="$HOME/CODE" open -a "SoundBase Desktop"
 ```
 
 Point it at the *parent* of your plugin folder, not at the plugin folder
-itself: a scan root contains plugins, it is not one.
+itself: each direct child with a `soundbase-plugin.json` is one plugin.
 
-`SB_PLUGIN_DIRS` roots are for development only. Installs from the Lab always
-land in `<userData>/plugins`, never in one of these.
+Quit SoundBase Desktop before running this. `open -a` hands the variable to a
+newly started app, not to one that is already running.
+
+**The dependencies have to be there.** SoundBase runs `main.js` as-is; it does
+not install anything. A folder without `node_modules/@soundbase/plugin-shell`
+fails at its first import, which looks exactly like a plugin that never
+handshakes. In a working tree that just means having run `npm install`.
+
+`SB_PLUGIN_DIRS` is for development. Users get your plugin from the Lab — see
+[publishing.md](publishing.md).
 
 ## The plugin manager
 
-Once the folder is in place and the flag is on, your plugin appears in
-**Settings → Plugins**, where a user can:
+Your plugin appears in **Settings → Plugins**, where a user can:
 
 - see its name, version and status, and any manifest error that stopped it;
 - enable or disable it (disabled plugins are not spawned);
 - fill in the `pluginConfigFields` your manifest declares;
-- read its log;
-- rescan, after you have dropped in a new folder.
+- read its log.
 
 A plugin whose manifest fails validation is listed with its error rather than
-silently skipped — one bad drop-in never stops the others.
+silently skipped — one bad plugin never stops the others.
 
 ## Seeing a device
 
@@ -89,16 +66,9 @@ and yours may be one of them.
 ## Reading the logs
 
 Every line your plugin writes to stdout after the handshake is captured by the
-host, per plugin:
-
-| | |
-|---|---|
-| macOS | `~/Library/Application Support/SoundBase Desktop/pluginLogs/<id>.log` |
-| Windows | `%APPDATA%\SoundBase Desktop\pluginLogs\<id>.log` |
-| Linux | `~/.config/SoundBase Desktop/pluginLogs/<id>.log` |
-
-The same lines are shown in the plugin manager. The shell prefixes its own with
-a timestamp and level; `this.log('info', …)` from your plugin class joins them.
+host and shown, per plugin, in the plugin manager. The shell prefixes its own
+with a timestamp and level; `this.log('info', …)` from your plugin class joins
+them.
 
 The first two lines after a successful start tell you which build is running:
 

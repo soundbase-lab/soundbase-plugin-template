@@ -156,9 +156,10 @@ invisible to SoundBase.
 **Renaming the plugin**
 
 > Run `npm run rename <id>` rather than editing by hand — the id appears in the
-> manifest, in every product's `deviceTypeId`, in `adapter.js`, and in
-> `package.json`, and a partial rename produces a device the host ignores with
-> only a warning line in the log.
+> manifest, in every product's `deviceTypeId`, in `adapter.js`, in
+> `package.json`, and in the `x.<id>.` namespace of every extension state key.
+> A partial rename produces a device the host ignores with only a warning line
+> in the log, or a manifest the host refuses outright.
 
 ## What not to ask for
 

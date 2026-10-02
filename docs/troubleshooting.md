@@ -66,34 +66,34 @@ SoundBase validates it **before spawning**. An invalid manifest means the
 plugin never starts. It is listed in the plugin manager with its error, so
 check there too.
 
-**3. Is the folder where SoundBase is looking?**
+**3. Is SoundBase looking at the right folder?**
 
-`<userData>/plugins/<your-plugin>/soundbase-plugin.json` must exist — one
-folder per plugin, directly under the scan root. Paths per OS are in
-[running-in-soundbase.md](running-in-soundbase.md#where-the-plugin-folder-goes).
-If you are using `SB_PLUGIN_DIRS`, point it at the folder *containing* your
-plugin, not at the plugin folder.
+`SB_PLUGIN_DIRS` has to name the folder *containing* your plugin, not the
+plugin folder itself, and the app has to have been started with it set — see
+[running-in-soundbase.md](running-in-soundbase.md#pointing-soundbase-at-your-working-tree).
 
 **4. Are dependencies actually there?**
 
 SoundBase runs `main.js` as-is and installs nothing. `node_modules/` has to be
-in the folder. A drop-in without it dies on its first import.
+in the folder. A plugin without it dies on its first import.
 
-**5. Is the feature flag on?**
-
-Third-party plugins are gated behind the `plugin-system` feature flag. Without
-it your plugin is scanned and listed, but never spawned. Ask your SoundBase
-contact to enable it for your account.
-
-**6. Is it enabled in the plugin manager?**
+**5. Is it enabled in the plugin manager?****6. Is it enabled in the plugin manager?**
 
 Settings → Plugins. A disabled plugin is not spawned.
 
-**7. Is the id colliding?**
+**6. Is the id colliding?**
 
-Two folders with the same manifest `id` — most often a copy left in
-`<userData>/plugins` and a dev tree on `SB_PLUGIN_DIRS` — and one of them loses
-as a duplicate. Rename or remove one.
+Two plugins with the same manifest `id` — most often a copy installed from the
+Lab and a dev tree on `SB_PLUGIN_DIRS` — and one of them loses as a duplicate.
+Uninstall or rename one.
+
+---
+
+## The Lab will not accept my repository
+
+It has to be a **public repository on GitHub**. A private one cannot be
+listed, and neither can a repository on any other host. See
+[publishing.md](publishing.md#the-route).
 
 ---
 
@@ -109,7 +109,7 @@ cause by far, and it happens the moment you rename a plugin without updating
 
 ```bash
 npm run doctor            # catches it without booting anything
-npm run rename <your-id>  # fixes all four places the id appears
+npm run rename <your-id>  # fixes all five places the id appears
 ```
 
 **`discoverDevices` is returning nothing.** Check it directly:

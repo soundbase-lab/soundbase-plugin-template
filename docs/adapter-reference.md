@@ -564,6 +564,42 @@ with a message that names the exact commands, keep looking on a timer, and
 report `ok` yourself when they have been run; the badge reads "Needs setup"
 rather than "Bad config", and no setting has to be touched to clear it.
 
+### Text the user reads
+
+A status message and a config field's `help` are shown in SoundBase as a small
+subset of Markdown: paragraphs, numbered and bulleted lists, **bold**,
+*emphasis*, `inline code`, fenced code blocks and `http://` or `https://`
+links. Nothing else — headings, images, tables and raw HTML come out as plain
+text.
+
+A fenced block gets a **Copy** button, so when the user has commands to run,
+give each one its own block inside a numbered step instead of writing them
+into a sentence:
+
+````js
+this.updateStatus(
+  'needs-setup',
+  [
+    'The sweep engine cannot be built yet. In a terminal, run these in order:',
+    '',
+    '1. Install the build tools:',
+    '   ```sh',
+    '   brew install cmake ninja uhd',
+    '   ```',
+    '2. Fetch the firmware images:',
+    '   ```sh',
+    '   node scripts/fetch-images.mjs',
+    '   ```',
+    '',
+    'Leave SoundBase open; this clears by itself once they are installed.',
+  ].join('\n')
+);
+````
+
+Keep it short. Most plugins need one sentence here, and plain text with no
+Markdown in it is shown exactly as written. A host older than this rendering
+shows the characters as typed, which for a numbered list is still readable.
+
 Adding one of these is the only legitimate reason to touch `main.js`. Keep the
 change inside the class body; leave the imports and the `runPlugin` call
 exactly as they are. (`npm run doctor` will start warning that `main.js` has

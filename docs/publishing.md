@@ -4,6 +4,11 @@ How a plugin gets from your machine to a user's.
 
 ## The route
 
+> **Public, and on GitHub.** The Lab can only list a **public repository on
+> GitHub**. A private repository cannot be listed, and no other host —
+> GitLab, Bitbucket, a self-hosted server — works: a release *is* a GitHub
+> Release, and that is where the install comes from.
+
 SoundBase's **Lab** is a directory of plugins. A listing points at your GitHub
 repository, and a release is a **GitHub Release with a zip attached**. When a
 user installs your plugin, SoundBase downloads that zip, verifies it, extracts
@@ -39,6 +44,7 @@ my-plugin/                     one top-level folder is expected
 
 What the Lab checks when you submit a tag:
 
+- a **public** GitHub repository;
 - a **published** (non-draft) GitHub Release on that tag;
 - **exactly one** `.zip` asset, at most **250 MB**;
 - `soundbase-plugin.json` and a `LICENSE` at the zip root (one top-level folder
@@ -47,12 +53,10 @@ What the Lab checks when you submit a tag:
 - the tag's commit differs from the previously released one, and the manifest
   version has never been released on this listing.
 
-SoundBase Desktop then re-checks the download: size and archive limits, path
-traversal, manifest validity, that `platforms` includes the machine it is on,
-an entrypoint that resolves inside the folder,
-and a **boot probe** — it spawns the plugin and waits for the handshake before
-installing it. Nothing outside a staging folder is touched until that probe
-passes, so a bad release cannot damage a working install.
+SoundBase Desktop checks the download again before installing it: the manifest
+has to be valid, `platforms` has to include the machine it is on, the
+entrypoint has to resolve inside the folder, and the plugin has to **boot and
+handshake**. A release that does not start is never installed.
 
 ## Cutting a release
 
@@ -89,8 +93,8 @@ git tag v0.5.0 && git push origin v0.5.0
 
 `.github/workflows/release.yml` takes it from there: it installs, re-runs
 `doctor`, `manifest` and the tests against the tagged commit, drops the dev
-dependencies, packs the zip, boots the packed folder the way the installer's
-probe does, checks it against the Lab's rules above, and publishes a GitHub
+dependencies, packs the zip, boots the packed folder the way SoundBase
+does before installing it, checks it against the Lab's rules above, and publishes a GitHub
 Release with the zip attached and generated notes.
 
 Nothing to configure — it uses the token GitHub gives the workflow. The tag has

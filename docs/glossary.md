@@ -158,9 +158,5 @@ supervises your plugin process.
 **Handshake** — the single `SB_PLUGIN_READY {"port":N}` line your process
 prints on stdout to say it is listening. No handshake, no plugin.
 
-**Core plugin** — a plugin shipped inside the SoundBase installer, always on
-and invisible in the plugin manager. The tinySA plugins are core plugins.
-Yours will not be one.
-
 **The Lab** — SoundBase's directory of plugins, and the route by which a user
 installs yours. See [publishing.md](publishing.md).

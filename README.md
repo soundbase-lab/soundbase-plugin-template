@@ -9,6 +9,12 @@ path works before you own any hardware.
 
 Then you replace one file.
 
+> **Your plugin has to live in a public repository on GitHub.** The Lab — the
+> route by which users install a plugin — lists a public GitHub repository
+> and installs from its GitHub Releases. A private repository
+> cannot be listed, and no other host (GitLab, Bitbucket, self-hosted) works.
+> Decide that before you start, not when you come to publish.
+
 ```sh
 npm install
 npm run doctor      # is everything wired up?
@@ -21,6 +27,17 @@ npm start
 npm test            # the contract, exercised against your adapter
 npm run smoke       # boots main.js as a child process, exactly as the host does
 ```
+
+To see it in SoundBase Desktop without copying anything, start the app with
+`SB_PLUGIN_DIRS` set to the folder that *contains* this one:
+
+```sh
+# macOS — this checkout is ~/CODE/my-plugin
+SB_PLUGIN_DIRS="$HOME/CODE" open -a "SoundBase Desktop"
+```
+
+[docs/running-in-soundbase.md](docs/running-in-soundbase.md) has the rest:
+the plugin manager, where your device shows up, and the logs.
 
 **Never used SoundBase?** Start with
 [docs/soundbase.md](docs/soundbase.md) — what the app is, what the people using
@@ -63,8 +80,9 @@ to fetch, and no SoundBase checkout required.
 npm run rename my-plugin-id -- --name "My Analyzer"
 ```
 
-The id appears in four places that must agree — the manifest, every product's
-`deviceTypeId`, `adapter.js`, and the package name. `rename` changes all four.
+The id appears in five places that must agree — the manifest, every product's
+`deviceTypeId`, `adapter.js`, the package name, and the `x.<id>.` namespace of
+every extension state key. `rename` changes all five.
 Do it before you publish anything: the id is stored in users' saved projects.
 
 **2. Describe your hardware** in `soundbase-plugin.json` — one `products` entry
@@ -195,7 +213,7 @@ protects *SoundBase*; you need your own boundary to protect *yourself*.
 | [manifest-reference.md](docs/manifest-reference.md) | Every manifest field |
 | [http-contract.md](docs/http-contract.md) | The wire, for debugging with `curl` |
 | [testing.md](docs/testing.md) | The three checks, and faking hardware |
-| [running-in-soundbase.md](docs/running-in-soundbase.md) | Install paths, feature flag, logs |
+| [running-in-soundbase.md](docs/running-in-soundbase.md) | Running a working tree with `SB_PLUGIN_DIRS`, the plugin manager, logs |
 | [native-runtimes.md](docs/native-runtimes.md) | Native libraries and bundled runtimes |
 | [publishing.md](docs/publishing.md) | Releases, the Lab, licensing |
 | [troubleshooting.md](docs/troubleshooting.md) | Symptom → cause |
@@ -210,7 +228,7 @@ protects *SoundBase*; you need your own boundary to protect *yourself*.
 | `npm run doctor` | is this plugin well-formed? with fixes for anything that isn't |
 | `npm run smoke` | boot as a child process, handshake, sweep — what the host does |
 | `npm run manifest` | validate `soundbase-plugin.json` against the contract schema |
-| `npm run rename <id>` | take an id, in all four places it appears |
+| `npm run rename <id>` | take an id, in all five places it appears |
 | `npm run pack:release` | build the zip users install, and boot-check it |
 | `npm run bump <x.y.z>` | move the version in every file that carries it; tag and push to release |
 
