@@ -115,7 +115,9 @@ export function createSpectrumAnalyzerAdapter(device, pluginConfig) {
     async applyConfig(cfg) {    // cfg = { startHz, stopHz, pointCount?, rbwHz?, controls? }
       return effective;         // echo what the hardware actually accepted
     },
-    async startSweep(onTrace) { /* call onTrace(ampsDbm: number[]) per sweep */ },
+    // onTrace(ampsDbm: number[]) per sweep; an optional second argument,
+    // [{ name, amplitudesDbm }], adds named curves on the same axis
+    async startSweep(onTrace) {},
     async stopSweep() {},
     async close() {},
   };

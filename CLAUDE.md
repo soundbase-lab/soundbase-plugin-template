@@ -67,7 +67,8 @@ export async function discoverDevices(pluginConfig) → Device[]
 export function createSpectrumAnalyzerAdapter(device, pluginConfig) → {
   open()                 → { capabilities, identity }
   applyConfig(cfg)       → effective config, echoing what the device accepted
-  startSweep(onTrace)    → calls onTrace(number[]) once per completed sweep
+  startSweep(onTrace)    → calls onTrace(number[]) once per completed sweep; an optional
+                           second argument, [{ name, amplitudesDbm }], adds named curves
   stopSweep()
   close()
   onFatal                → assigned by the shell; call it when the transport dies

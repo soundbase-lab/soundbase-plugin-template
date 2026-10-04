@@ -209,7 +209,8 @@ or after a host restart.
   device's full rate, so nothing is lost regardless of poll rate.
 - `409 no_trace` until the first sweep completes.
 - Optional `series` adds named curves sharing the same axis — per-antenna
-  traces, say. Single-curve plugins omit it.
+  traces, say. Single-curve plugins omit it; an adapter sends them as
+  `onTrace`'s second argument.
 
 ### `POST /devices/{id}/control` — SpectrumAnalyzer 1.1
 

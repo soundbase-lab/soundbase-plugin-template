@@ -229,10 +229,28 @@ async startSweep(onTrace) {
 }
 ```
 
-`onTrace` takes one argument: an array of numbers in **dBm**, `pointCount`
-long, ordered from `startHz` to `stopHz`. Nothing else. The shell builds the
-frequency axis, the sweep id, the timestamp and the trace-mode accumulation
-from the effective configuration.
+`onTrace` takes an array of numbers in **dBm**, `pointCount` long, ordered
+from `startHz` to `stopHz`. The shell builds the frequency axis, the sweep id,
+the timestamp and the trace-mode accumulation from the effective configuration.
+
+**More than one curve.** A device that measures several things over the same
+span — one trace per antenna, a peak detector beside an average one — passes
+them as a second argument, and SoundBase overlays one curve per entry on the
+primary trace:
+
+```js
+onTrace(average, [{ name: 'Peak', amplitudesDbm: peak }]);
+```
+
+Each entry needs a name of its own and exactly as many amplitudes as the
+primary trace, every one a number. An entry missing any of that is dropped and
+the rest of the sweep is served; the log names the first one dropped, once per
+configuration rather than once per sweep, so fix it and look again. The shell
+holds every series under the trace mode on its own, so max-hold on a peak
+curve is the peak's maximum. Send every curve on every sweep: one left out
+loses its hold and starts again when it returns. A shell older than this
+argument ignores it and serves the primary trace alone, so passing it costs
+nothing.
 
 - **Length must equal `pointCount`.** The host draws `pointCount` of them; a
   mismatch is the classic cause of a trace that looks right but is shifted in
