@@ -48,7 +48,7 @@ host still loads on an older one; that is deliberate and load-bearing.
 ```json
 "contract": {
   "core": "1.4",
-  "modules": { "SpectrumAnalyzer": "1.2", "ChannelMonitoring": "1.0", "PropertyControl": "1.0" }
+  "modules": { "SpectrumAnalyzer": "1.2", "ChannelMonitoring": "1.1", "PropertyControl": "1.0" }
 }
 ```
 
@@ -122,8 +122,10 @@ reports and whose `traits` say what class of thing it is:
 
 ### `layout`
 
-How the device's cards are drawn: a tree of primitives in three **slots**,
-each bound by a dotted path to the state your adapter reports.
+What the device's cards show: a list of primitives in three **slots**, each
+bound by a dotted path to the state your adapter reports. A layout says
+*what* a channel reports; SoundBase decides *where* each node goes, so your
+device has the shape of the cards beside it.
 
 | Slot | Drawn | Bind paths relative to |
 |---|---|---|
@@ -135,13 +137,13 @@ Seven node types:
 
 | Node | Fields | Draws |
 |---|---|---|
-| `meter` | `bind`, `metric`, `label?` | a level bar with the scale and colours of that metric: `AUDIO_LEVEL`, `AUDIO_LEVEL_RIGHT`, `RF_LEVEL`, `QUALITY`, `BATTERY`, `MUTE`, `INTERFERENCE`, `DIVERSITY` |
+| `meter` | `bind`, `metric`, `label?` | a meter with the scale and colours of that metric: `AUDIO_LEVEL`, `AUDIO_LEVEL_RIGHT`, `RF_LEVEL`, `QUALITY`, `BATTERY`, `MUTE`, `INTERFERENCE`, `DIVERSITY` |
 | `indicator` | `bind`, `label?`, `tone?`, `on?` | a lamp, lit when the bound value equals `on` (default `true`) |
 | `value` | `bind`, `label?`, `unit?`, `format?`, `precision?` | text; `format` is `text`, `number`, `integer`, `frequency`, `dbm` or `percent` |
 | `battery` | `bind`, `label?` | a battery gauge from `{ percent, lifetimeInMinutes? }` or a bare percentage |
 | `text` | `text`, `tone?` | static text |
-| `group` | `children`, `label?`, `direction?` | a row or column of nodes |
-| `control` | `propertyId`, `label?` | a `PropertyControl` descriptor rendered inline |
+| `group` | `children`, `label?`, `direction?` | a row or column of nodes in an entity row; in the `channel` slot it only gathers nodes (see below) |
+| `control` | `propertyId`, `label?` | a `PropertyControl` descriptor, offered in the device's settings |
 
 `tone` is one of the theme's semantic tones — `neutral`, `info`, `success`,
 `warning`, `destructive` — and is the only colour a layout may ask for.
@@ -149,6 +151,68 @@ A node of a type this version does not define is dropped by the renderer, so
 a layout written for a newer SoundBase still draws what an older one knows.
 A node bound to a path that never arrives draws its empty state. The template
 plugin's second product carries a complete worked layout.
+
+#### Where channel nodes go
+
+On the grid card the `channel` slot's nodes are placed by type, in the order
+you list them:
+
+| Node | Goes to |
+|---|---|
+| `meter` | the meter strip. `AUDIO_LEVEL` followed by `AUDIO_LEVEL_RIGHT` draws as one stereo meter with the dB scale between. |
+| `value`, `text`, `indicator` | the status cells. A `value` shows its bare reading, with its `label` on hover. The card shows the first **four** cells (eight when there is no mute cell); the list view shows all of them. |
+| the `indicator` bound to `mute` | the large mute cell, red when muted |
+| `battery` | the row under the meters |
+| anything bound to `channelName` or `frequency` | nowhere — the card shows both in its own bands |
+| `control` | the device's settings, not the card |
+
+So list the three or four readings that matter most first. `group` and
+`direction` do not move a channel node. The list view files the same nodes
+into its columns.
+
+#### Layout properties added in ChannelMonitoring 1.1
+
+All four are optional, and an older SoundBase ignores them and draws the
+layout as before. Your plugin needs an SDK that implements ChannelMonitoring
+1.1 as well: the shell reports your layout to SoundBase through the contract
+package it was installed with, and an older one leaves these properties off.
+Declare `"ChannelMonitoring": "1.1"` when you move to that SDK.
+
+| Property | On | Does |
+|---|---|---|
+| `meterStyle` | the layout | `"led"` (the default) draws every meter as a column of LEDs, `"bar"` as a filled bar. One choice per layout. |
+| `region` | a node with a `bind`, or `text` | overrides the placement above: `"cells"` (a status cell — also how a `frequency` value or the `mute` indicator gets there), `"primary"` (an `indicator` as the large cell in place of mute, lit in its `tone`), `"footer"` (the row under the meters), `"detail"` (off the grid card; the list view still shows it) |
+| `visibleWhen` | any node | draws the node only while a condition on the slot's state holds; on a `group` it hides everything inside |
+| `labelFrom` | `meter`, `indicator`, `value`, `battery` | reads the label from state, with `label` as the fallback |
+
+A condition is `{ "bind", "equals"?, "notEquals"?, "in"? }`. Every operator
+you name must hold; with none, the bound value must be truthy. A hidden cell
+gives its place to the next one.
+
+`labelFrom` is `{ "bind", "map"? }`. With a `map` the bound value picks the
+text and `label` is shown when it picks none; without one the bound value is
+the text.
+
+```json
+"layout": {
+  "meterStyle": "bar",
+  "channel": [
+    { "type": "meter", "bind": "meters.af", "metric": "AUDIO_LEVEL", "label": "L",
+      "labelFrom": { "bind": "audioModes.txMode", "map": { "mono": "M" } } },
+    { "type": "meter", "bind": "meters.afR", "metric": "AUDIO_LEVEL_RIGHT", "label": "R",
+      "labelFrom": { "bind": "audioModes.txMode", "map": { "mono": "M" } } },
+    { "type": "value", "bind": "audioModes.txMode", "label": "Audio" },
+    { "type": "value", "bind": "x.acme.diagnostics", "region": "detail" },
+    { "type": "indicator", "bind": "x.acme.limiter", "label": "Limiter",
+      "visibleWhen": { "bind": "audioModes.txMode", "notEquals": "mono" } },
+    { "type": "indicator", "bind": "mute", "label": "RF mute" }
+  ]
+}
+```
+
+Conditions and bound labels read the state that redraws the card. In the
+`channel` slot that is everything except `meters`, which is polled
+separately and cannot drive a label or hide a node.
 
 ### `stateKeys`
 
@@ -197,7 +261,7 @@ declares at `open()`. Learn it once.
 | `choices` | | `[{ id, label }]`. Required for `dropdown`, ignored otherwise. |
 | `unit` | | Suffix shown beside the input, e.g. `dBm`, `Hz`. |
 | `min`, `max`, `step` | | For `number`. **Advisory — clamp in the adapter too.** |
-| `help` | | Helper text under the input. A small subset of Markdown is rendered — see [Text the user reads](adapter-reference.md#text-the-user-reads). For a `static-text` field, this or `default` is the note itself. |
+| `help` | | Explanation of the field, opened from a **?** beside its label rather than printed on the form. A small subset of Markdown is rendered — see [Text the user reads](adapter-reference.md#text-the-user-reads). For a `static-text` field, this or `default` is the note itself. |
 
 **Which list does a field belong in?**
 
