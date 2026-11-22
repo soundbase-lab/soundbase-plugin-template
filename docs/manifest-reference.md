@@ -27,7 +27,7 @@ host still loads on an older one; that is deliberate and load-bearing.
 | `contract` | ✓ | Which contract you implement. See below. |
 | `runtime` | ✓ | `{ "type": "node", "entrypoint": "main.js" }`. `node` is the only runtime type today, and the entrypoint must resolve inside your plugin folder. |
 | `products` | ✓ | At least one. The models you provide. |
-| `license` | | SPDX id or licence name. **Required by the Lab** before it will accept a release. |
+| `license` | | SPDX id or license name. **Required by the Lab** before it will accept a release. |
 | `platforms` | | Which SoundBase Desktop builds this plugin runs on, as `<process.platform>-<process.arch>`: any of `darwin-arm64` (macOS ARM), `darwin-x64` (macOS Intel), `win32-x64` (Windows 64-bit). **Required by the Lab** before it will accept a release. Shown as icons on your listing; Desktop refuses to install or run the plugin on a machine you did not list. Declare only what you have actually run — see [native-runtimes.md](native-runtimes.md). A manifest without it loads on every machine, ungated. |
 | `repository` | | URL. Shown to users deciding whether to trust you. |
 | `maintainers` | | `[{ name, email?, url? }]` |
@@ -47,8 +47,8 @@ host still loads on an older one; that is deliberate and load-bearing.
 
 ```json
 "contract": {
-  "core": "1.4",
-  "modules": { "SpectrumAnalyzer": "1.2", "ChannelMonitoring": "1.1", "PropertyControl": "1.0" }
+  "core": "1.5",
+  "modules": { "SpectrumAnalyzer": "1.3", "ChannelMonitoring": "1.1", "PropertyControl": "1.0" }
 }
 ```
 
@@ -306,7 +306,7 @@ contract, and an old lineage does not make an incompatible plugin compatible.
   "license": "MIT",
   "repository": "https://github.com/acme/soundbase-plugin-acme",
   "maintainers": [{ "name": "Acme Instruments", "email": "support@acme.example" }],
-  "contract": { "core": "1.4", "modules": { "SpectrumAnalyzer": "1.2" } },
+  "contract": { "core": "1.5", "modules": { "SpectrumAnalyzer": "1.3" } },
   "runtime": { "type": "node", "entrypoint": "main.js" },
   "deployment": ["managed"],
   "template": { "name": "soundbase-plugin-template", "version": "1.0.0" },

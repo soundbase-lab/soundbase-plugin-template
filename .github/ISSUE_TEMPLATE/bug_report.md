@@ -17,7 +17,7 @@ labels: bug
 **Output of `npm run doctor`**
 
 ```
-# this covers the setup: Node, the SDK, the manifest, the adapter, the licence
+# this covers the setup: Node, the SDK, the manifest, the adapter, the license
 ```
 
 **Output of `npm run smoke`**

@@ -112,7 +112,7 @@ npm run pack:release            # dist/<id>-<version>.zip, boot-checked
 It needs no SoundBase checkout: your dependencies come from your own
 `node_modules`, because both SDK packages are on public npm.
 
-Then, in the Lab: **my submissions → update release → `v0.5.0`**, and wait for
+Then, in the Lab: **my lab → submissions → update release → `v0.5.0`**, and wait for
 approval.
 
 ## Versioning
@@ -128,9 +128,9 @@ Bump `version` in `soundbase-plugin.json`, `package.json` and
 
 ## Licensing
 
-**Two separate licences are involved.** Do not conflate them.
+**Two separate licenses are involved.** Do not conflate them.
 
-**Your plugin code is yours.** Licence it however you want: MIT, proprietary,
+**Your plugin code is yours.** License it however you want: MIT, proprietary,
 commercial. You may sell it.
 
 **The SDK you build on** — `@soundbase/plugin-contract`,
@@ -141,15 +141,15 @@ distributing and operating plugins for SoundBase, **including commercially**;
 it does not permit using this code with anything that is not SoundBase. Each
 version converts to the Change License named in `LICENSE` on its Change Date.
 
-> The `LICENSE` in this repository is the finalised SDK licence: Business
+> The `LICENSE` in this repository is the finalised SDK license: Business
 > Source License 1.1, Licensor Show Code, Corp., converting to the Apache
 > License 2.0 on September 5, 2030. It covers the template code you started
-> from. If your plugin ships under a licence of its own, replace the file and
+> from. If your plugin ships under a license of its own, replace the file and
 > set `license` in the manifest to match; `npm run doctor` checks that a
 > `LICENSE` is present and that the manifest names one.
 
 The Lab refuses a release with no `LICENSE` file or no `license` in the
-manifest. That is not bureaucracy: a repository with no licence is
+manifest. That is not bureaucracy: a repository with no license is
 all-rights-reserved by default, and a user has no idea what they may do with
 it.
 
@@ -164,7 +164,7 @@ your manifest are shown to users deciding whether to trust you; fill them in.
 ## Before you tag
 
 ```bash
-npm run doctor    # id changed, licence real, manifest valid, main.js untouched
+npm run doctor    # id changed, license real, manifest valid, main.js untouched
 npm test
 npm run smoke
 ```

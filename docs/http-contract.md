@@ -26,6 +26,10 @@ node_modules/@soundbase/plugin-contract/spec/state-keys.json
   `Authorization: Bearer <token>`. **With `SB_PLUGIN_TOKEN` unset — a plugin
   you started by hand — authentication is disabled**, which is what makes
   `curl` during development easy.
+- **A lifeline on stdin.** A host that sets `SB_PLUGIN_LIFELINE=stdin` holds
+  the process's stdin open and never writes to it; end-of-file means the host
+  is gone, and the plugin closes its devices and exits (core 1.5). The shell
+  does this for you.
 - **Units.** In the SpectrumAnalyzer module every frequency is in hertz,
   including RBW, VBW and step size, and every amplitude in dBm. In
   ChannelMonitoring a tuned frequency is in MHz and transmit power in mW.
@@ -163,6 +167,9 @@ Responds with the **effective** configuration after clamping:
 - `pointCount` wins over `stepHz`; responses echo both.
 - Omitting `rbwHz` means auto — what the analyzer chose appears under
   `resolved`, while `rbwHz` itself stays absent.
+- `traceMode` is deprecated (SpectrumAnalyzer 1.3). SoundBase 1.3 and later
+  always send `clear-write` and hold for themselves; the shell still honours
+  the other modes for older hosts.
 - `resolved.sweepTimeMs` (SpectrumAnalyzer 1.2), when present, is how long one
   sweep at these settings takes. The host's stall watchdog waits a few of them
   before it calls a quiet device stalled.
@@ -207,6 +214,12 @@ or after a host restart.
 - `sweepId` increments by 1 per completed sweep, so a jump tells the host it
   skipped sweeps. For `max-hold` and `min-hold` the shell accumulates at the
   device's full rate, so nothing is lost regardless of poll rate.
+- When a trace stands for more than one sweep, it carries their `envelope`
+  (SpectrumAnalyzer 1.3): `sweepCount`, and per point `maxDbm`, `minDbm` and
+  `meanDbm` (a power mean). The shell computes it from the raw sweeps since the
+  last trace it served, whatever the trace mode, for the reader that took that
+  trace; adapters do nothing. A series carries its own. A point none of those
+  sweeps read is `null` in all three arrays.
 - `409 no_trace` until the first sweep completes.
 - Optional `series` adds named curves sharing the same axis — per-antenna
   traces, say. Single-curve plugins omit it; an adapter sends them as

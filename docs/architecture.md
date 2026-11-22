@@ -72,7 +72,7 @@ sequenceDiagram
     participant P as your process
     participant A as adapter.js
 
-    H->>P: spawn main.js, SB_PLUGIN_TOKEN=…
+    H->>P: spawn main.js, SB_PLUGIN_TOKEN=…, SB_PLUGIN_LIFELINE=stdin
     P->>P: read + validate soundbase-plugin.json
     Note over P: an invalid manifest exits here
     P->>P: listen on 127.0.0.1:0
@@ -206,6 +206,13 @@ The host applies the same policy to every plugin:
 | Restart backoff | 1 s, 2 s, 4 s, 8 s, 16 s |
 | Restart limit | 5, then the plugin is left down and reported failed |
 | Shutdown | best-effort `DELETE /devices`, then `SIGTERM`, then `SIGKILL` |
+| Host death | stdin reaches end-of-file (the lifeline, core 1.5); the shell closes every device and exits, taking its process group with it |
+
+The last row covers the case where no policy can run: a host that crashed or
+was force-quit signals nobody. It holds each plugin's stdin open instead, and
+the shell treats that stream ending as the instruction to stop. A plugin that
+cannot notice — one declaring a core older than 1.5, or one whose event loop
+is blocked — is stopped by the next host to start, before it spawns anything.
 
 Note what this means for your own error handling. **A crash is survivable but
 expensive**: the user loses their trace for several seconds and their device

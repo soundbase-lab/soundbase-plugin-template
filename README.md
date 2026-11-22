@@ -285,7 +285,7 @@ invariants, the file map, and worked prompts for the common tasks —
 implementing discovery, adding a control, wrapping a native driver. It is worth
 reading yourself.
 
-## Licence
+## License
 
 This template and `@soundbase/plugin-shell` are licensed under the **Business
 Source License 1.1** — source available, not open source. See `LICENSE` for the
@@ -296,8 +296,8 @@ does not permit using this code with anything that is not SoundBase.
 Each version converts automatically to the Change License named in `LICENSE` on
 its Change Date.
 
-Your own plugin code is yours; licence it however you like. The Additional Use
-Grant governs the parts you received under this licence.
+Your own plugin code is yours; license it however you like. The Additional Use
+Grant governs the parts you received under this license.
 
 ## Support
 

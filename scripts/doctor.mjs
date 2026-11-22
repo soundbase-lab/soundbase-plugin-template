@@ -263,9 +263,9 @@ if (!has('adapter.js')) {
   }
 }
 
-// -- licence -----------------------------------------------------------------
+// -- license -----------------------------------------------------------------
 
-section('licence');
+section('license');
 
 if (!has('LICENSE')) {
   bad(
@@ -275,7 +275,7 @@ if (!has('LICENSE')) {
 } else if (read('LICENSE').includes('<<<PLACEHOLDER:')) {
   warn(
     'LICENSE still contains placeholders',
-    'fill them in, or replace the file with your own licence, before publishing'
+    'fill them in, or replace the file with your own license, before publishing'
   );
 } else {
   ok('LICENSE present');

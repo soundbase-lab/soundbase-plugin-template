@@ -85,14 +85,26 @@ works out *which copy* of your plugin a user is running.
 
 | | |
 |---|---|
-| Spawn | `main.js`, with `SB_PLUGIN_TOKEN` in the environment |
+| Spawn | `main.js`, with `SB_PLUGIN_TOKEN` and `SB_PLUGIN_LIFELINE=stdin` in the environment |
 | Handshake | 10 s to print `SB_PLUGIN_READY`, then it gives up |
 | Health | `GET /health` every 5 s; 3 consecutive failures counts as a crash |
 | Restart | backoff 1, 2, 4, 8, 16 s; 5 restarts, then it stays down |
 | Shutdown | best-effort `DELETE /devices`, then `SIGTERM`, then `SIGKILL` |
+| SoundBase dies | your stdin reaches end-of-file; the shell closes your devices and exits |
 
 Enabling and disabling a plugin, and switching projects, both go through the
 same path.
+
+The last row is the one nobody sends you. SoundBase cannot signal anything
+from a crash or a force-quit, so it holds your stdin open for as long as it
+lives and the shell watches for it to end — the *lifeline*, core 1.5. Two
+things follow for your own code. Your stdin never delivers data, so a
+subprocess that inherits it and reads from it waits for ever: give anything
+you spawn a stdin of its own. And the shell leaves by killing your whole
+process group, so a worker you started goes with you rather than staying
+behind with the device open. A plugin whose manifest declares a core older
+than 1.5 is spawned with its stdin closed, as before; if SoundBase dies under
+one of those, the next start of SoundBase stops it before starting a new copy.
 
 ## When it does not appear
 

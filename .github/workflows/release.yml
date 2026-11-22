@@ -2,7 +2,7 @@
 #
 # Push `v0.5.0` and this builds the zip the Lab accepts, boots it, checks it
 # against the Lab's rules, and publishes a GitHub Release with it attached.
-# Then: Lab > my submissions > update release > v0.5.0.
+# Then: Lab > my lab > submissions > update release > v0.5.0.
 #
 #   git tag v0.5.0 && git push origin v0.5.0
 #

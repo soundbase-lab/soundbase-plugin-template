@@ -37,6 +37,13 @@ restart it, so the user's *other* devices are unaffected.
 The process boundary between SoundBase and your plugin protects SoundBase from
 you. This second boundary is the one that protects you from the vendor's SDK.
 
+Spawn the worker with pipes of its own, as the JSON-lines RPC above already
+requires, and never with an inherited stdin: under SoundBase your stdin is the
+host's lifeline, which stays open and silent for as long as SoundBase runs.
+Leave the worker in your process group (do not `detach` it). If SoundBase dies
+the shell closes your devices and then kills the group, so a worker that is
+wedged holding the radio does not survive to block the next start.
+
 A useful side effect: the worker becomes independently testable. You can drive
 it by hand and see exactly what it does.
 

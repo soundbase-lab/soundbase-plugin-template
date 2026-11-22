@@ -10,7 +10,7 @@ npm run smoke     # main.js spawned as a child process, handshake and all
 ```
 
 `npm run doctor` sits underneath all of them: it checks the setup itself —
-Node, the SDK, the manifest, the entrypoint, the adapter exports, the licence —
+Node, the SDK, the manifest, the entrypoint, the adapter exports, the license —
 and tells you what to do about anything wrong. Start there when you do not yet
 know which layer is broken.
 

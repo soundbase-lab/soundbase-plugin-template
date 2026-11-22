@@ -63,7 +63,7 @@ npm run doctor
 ```
 
 It checks your Node version, the SDK, the manifest, the entrypoint, the adapter
-and the licence, and prints the exact fix for anything wrong. Run it whenever
+and the license, and prints the exact fix for anything wrong. Run it whenever
 something is broken and you do not yet know which layer is at fault.
 
 ## 3. Run it
